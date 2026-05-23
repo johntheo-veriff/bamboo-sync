@@ -42,13 +42,11 @@
       "**/.*",
       "**/node_modules/**"
     ],
-    "rewrites": [
+    "redirects": [
       {
         "source": "**",
-        "run": {
-          "serviceId": "bamboo-sync",
-          "region": "europe-west4"
-        }
+        "destination": "https://bamboo-sync--bamboo-calendar-sync-app.europe-west4.hosted.app",
+        "type": 302
       }
     ]
   }
