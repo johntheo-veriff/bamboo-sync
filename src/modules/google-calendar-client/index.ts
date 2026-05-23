@@ -9,11 +9,24 @@ import {
 const CALENDAR_API_BASE = "https://www.googleapis.com/calendar/v3/calendars/primary/events";
 const TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
 
+function exclusiveEndDate(inclusiveDate: string): string {
+  const d = new Date(inclusiveDate + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10);
+}
+
+function inclusiveEndDate(exclusiveDate: string): string {
+  const d = new Date(exclusiveDate + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() - 1);
+  return d.toISOString().slice(0, 10);
+}
+
 function buildEventBody(event: CalendarEventInput): object {
   return {
     summary: event.name,
     start: { date: event.startDate },
-    end: { date: event.endDate },
+    end: { date: exclusiveEndDate(event.endDate) },
+    eventType: "outOfOffice",
     colorId: event.colorId,
     extendedProperties: {
       private: {
@@ -175,12 +188,15 @@ export async function listBambooSyncEvents(
     }>;
   };
 
-  return (data.items ?? []).map((item) => ({
-    googleEventId: item.id,
-    bambooId: item.extendedProperties?.private?.bambooId ?? "",
-    type: (item.extendedProperties?.private?.bambooType ?? "time-off") as "time-off" | "holiday",
-    name: item.summary ?? "",
-    startDate: item.start?.date ?? "",
-    endDate: item.end?.date ?? "",
-  }));
+  return (data.items ?? []).map((item) => {
+    const exclusiveEnd = item.end?.date ?? "";
+    return {
+      googleEventId: item.id,
+      bambooId: item.extendedProperties?.private?.bambooId ?? "",
+      type: (item.extendedProperties?.private?.bambooType ?? "time-off") as "time-off" | "holiday",
+      name: item.summary ?? "",
+      startDate: item.start?.date ?? "",
+      endDate: exclusiveEnd ? inclusiveEndDate(exclusiveEnd) : "",
+    };
+  });
 }
