@@ -6,6 +6,7 @@ import {
 } from "@/modules/google-calendar-client";
 import { fetchTimeOffEntries } from "@/modules/bamboo-hr-client";
 import { BambooAuthError } from "@/modules/bamboo-hr-client/types";
+import { validateCsrfToken } from "@/lib/csrf";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
@@ -37,12 +38,18 @@ export async function GET() {
   });
 }
 
-export async function DELETE() {
+export async function DELETE(request: Request) {
   const cookieStore = await cookies();
   const googleAccountId = cookieStore.get("google-account-id")?.value;
 
   if (!googleAccountId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const csrfHeader = request.headers.get("X-CSRF-Token") ?? "";
+  const csrfCookie = cookieStore.get("csrf-token")?.value ?? "";
+  if (!validateCsrfToken(csrfHeader, csrfCookie)) {
+    return NextResponse.json({ error: "Invalid CSRF token" }, { status: 403 });
   }
 
   const store = connectionStore();
@@ -83,6 +90,12 @@ export async function PATCH(request: Request) {
 
   if (!googleAccountId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const csrfHeader = request.headers.get("X-CSRF-Token") ?? "";
+  const csrfCookie = cookieStore.get("csrf-token")?.value ?? "";
+  if (!validateCsrfToken(csrfHeader, csrfCookie)) {
+    return NextResponse.json({ error: "Invalid CSRF token" }, { status: 403 });
   }
 
   let body: { apiKey?: string };

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export function UpdateApiKeyForm() {
+export function UpdateApiKeyForm({ csrfToken }: { csrfToken: string }) {
   const [apiKey, setApiKey] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -17,7 +17,7 @@ export function UpdateApiKeyForm() {
 
     const res = await fetch("/api/connection", {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken },
       body: JSON.stringify({ apiKey }),
     });
 
@@ -72,7 +72,7 @@ export function UpdateApiKeyForm() {
   );
 }
 
-export function DisconnectButton() {
+export function DisconnectButton({ csrfToken }: { csrfToken: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -81,7 +81,10 @@ export function DisconnectButton() {
     setLoading(true);
     setError(null);
 
-    const res = await fetch("/api/connection", { method: "DELETE" });
+    const res = await fetch("/api/connection", {
+      method: "DELETE",
+      headers: { "X-CSRF-Token": csrfToken },
+    });
 
     if (!res.ok) {
       setError("Failed to disconnect. Please try again.");

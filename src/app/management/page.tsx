@@ -1,5 +1,6 @@
 import { createFirebaseConnectionStore } from "@/modules/connection-store/firebase-adapter";
 import { db } from "@/lib/firebase-admin";
+import { generateCsrfToken } from "@/lib/csrf";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { UpdateApiKeyForm, DisconnectButton } from "./actions";
@@ -46,6 +47,15 @@ export default async function ManagementPage() {
 
   const store = createFirebaseConnectionStore(db);
   const connection = await store.get(googleAccountId);
+
+  // Generate and set CSRF token for mutation endpoints
+  const csrfToken = generateCsrfToken();
+  cookieStore.set("csrf-token", csrfToken, {
+    httpOnly: false,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    path: "/",
+  });
 
   if (!connection) {
     redirect("/");
@@ -98,7 +108,7 @@ export default async function ManagementPage() {
         {/* Update API Key */}
         <div>
           <p className="text-sm font-medium text-gray-700 mb-3">Update API key</p>
-          <UpdateApiKeyForm />
+          <UpdateApiKeyForm csrfToken={csrfToken} />
         </div>
 
         <hr className="border-gray-100" />
@@ -109,7 +119,7 @@ export default async function ManagementPage() {
           <p className="text-sm text-gray-500 mb-3">
             This will remove all bamboo-sync calendar events and unlink your account.
           </p>
-          <DisconnectButton />
+          <DisconnectButton csrfToken={csrfToken} />
         </div>
       </div>
     </div>
