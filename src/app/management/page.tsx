@@ -5,7 +5,7 @@ import { UserAvatar } from "@/components/UserAvatar";
 import { VeriffLogo } from "@/components/VeriffLogo";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { DisconnectButton, SyncNowButton } from "./actions";
+import { DisconnectButton, SyncNowButton, SyncedEventsPanel } from "./actions";
 
 function formatNextSync(date: Date): string {
   const now = new Date();
@@ -104,6 +104,8 @@ export default async function ManagementPage() {
               <span className="ml-2 text-[#1C2B2A]">{nextSyncLabel}</span>
             </div>
           </div>
+
+          <SyncedEventsPanel />
 
           {/* Actions card */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 space-y-6">
