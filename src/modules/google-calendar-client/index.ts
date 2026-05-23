@@ -27,6 +27,7 @@ function buildEventBody(event: CalendarEventInput): object {
     start: { date: event.startDate },
     end: { date: exclusiveEndDate(event.endDate) },
     eventType: "outOfOffice",
+    outOfOfficeProperties: { autoDeclineMode: "declineNone" },
     extendedProperties: {
       private: {
         bambooId: event.bambooId,
@@ -126,7 +127,8 @@ export async function createEvent(
   });
 
   if (!response.ok) {
-    throw new GoogleNetworkError(`Create event failed with status ${response.status}`);
+    const body = await response.text().catch(() => "");
+    throw new GoogleNetworkError(`Create event failed with status ${response.status}: ${body}`);
   }
 
   const data = (await response.json()) as { id: string };
@@ -146,7 +148,8 @@ export async function updateEvent(
   });
 
   if (!response.ok) {
-    throw new GoogleNetworkError(`Update event failed with status ${response.status}`);
+    const body = await response.text().catch(() => "");
+    throw new GoogleNetworkError(`Update event failed with status ${response.status}: ${body}`);
   }
 }
 
