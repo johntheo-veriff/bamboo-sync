@@ -2,7 +2,8 @@
   "compilerOptions": {
     "module": "commonjs",
     "esModuleInterop": true,
-    "moduleResolution": "node",
+    "moduleResolution": "node10",
+    "ignoreDeprecations": "6.0",
     "noImplicitReturns": true,
     "noUnusedLocals": false,
     "sourceMap": true,
@@ -17,5 +18,10 @@
   "include": [
     "src",
     "../src"
+  ],
+  "exclude": [
+    "../src/app",
+    "../src/**/*.test.ts",
+    "../node_modules"
   ]
 }

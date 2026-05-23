@@ -21,7 +21,7 @@ function oneYearFromNow(): string {
 }
 
 function baseUrl(subdomain: string): string {
-  return `https://${subdomain}.bamboohr.com/api/gateway.php/${subdomain}/v1`;
+  return `https://api.bamboohr.com/api/gateway.php/${subdomain}/v1`;
 }
 
 function authHeader(apiKey: string): string {
