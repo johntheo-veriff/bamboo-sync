@@ -24,7 +24,7 @@
     }
   ],
   "apphosting": {
-    "backendId": "bamboo-sync-server",
+    "backendId": "bamboo-sync",
     "rootDir": "/",
     "ignore": [
       "node_modules",
@@ -46,7 +46,7 @@
       {
         "source": "**",
         "run": {
-          "serviceId": "bamboo-sync-server",
+          "serviceId": "bamboo-sync",
           "region": "europe-west4"
         }
       }
