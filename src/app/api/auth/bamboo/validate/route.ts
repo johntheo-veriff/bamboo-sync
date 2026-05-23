@@ -1,6 +1,5 @@
 import { fetchWhosOut } from "@/modules/bamboo-hr-client";
 import { BambooAuthError } from "@/modules/bamboo-hr-client/types";
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
@@ -24,16 +23,6 @@ export async function POST(request: Request) {
     }
     return NextResponse.json({ error: "Could not reach BambooHR" }, { status: 502 });
   }
-
-  // Store credentials in HttpOnly cookie for the OAuth callback to read
-  const cookieStore = await cookies();
-  cookieStore.set("bamboo-credentials", JSON.stringify({ subdomain, apiKey }), {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 60 * 10, // 10 minutes — long enough for the OAuth flow
-    path: "/",
-  });
 
   return NextResponse.json({ valid: true });
 }
