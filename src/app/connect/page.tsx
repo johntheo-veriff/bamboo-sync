@@ -1,3 +1,6 @@
+import { db } from "@/lib/firebase-admin";
+import { createFirebaseGoogleIdentityStore } from "@/modules/google-identity-store/firebase-adapter";
+import { UserAvatar } from "@/components/UserAvatar";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import ConnectForm from "./ConnectForm";
@@ -15,7 +18,18 @@ export default async function ConnectPage({
     redirect("/");
   }
 
+  const identityStore = createFirebaseGoogleIdentityStore(db);
+  const identity = await identityStore.get(googleAccountId);
+  const email = identity?.email ?? "";
+
   const { subdomain } = await searchParams;
 
-  return <ConnectForm defaultSubdomain={subdomain ?? ""} />;
+  return (
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      <UserAvatar email={email} />
+      <div className="flex-1 flex items-center justify-center px-4 pb-8">
+        <ConnectForm defaultSubdomain={subdomain ?? ""} />
+      </div>
+    </div>
+  );
 }

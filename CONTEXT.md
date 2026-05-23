@@ -24,9 +24,17 @@ _Avoid_: leave, absence, vacation request
 A company-wide non-working day defined in BambooHR by HR. Synced to the User's Google Calendar as an event.
 _Avoid_: public holiday, bank holiday, day off
 
+**Google Identity**:
+The persisted record of a User's Google account known to bamboo-sync. Stores the Google refresh token and email. Created the first time a User authenticates with Google; survives Connection deletion and logout. Allows bamboo-sync to skip Google OAuth on return visits.
+_Avoid_: Google session, Google account, login record
+
 **Connection**:
-The active link between a User's BambooHR credentials (Subdomain + API Key) and their Google Calendar. Established once during onboarding; persists in the background with no bamboo-sync login required. Disconnecting removes the Connection and deletes all Calendar Events bamboo-sync created.
+The active link between a User's BambooHR credentials (Subdomain + API Key) and their Google Calendar. Established once during onboarding; persists in the background with no bamboo-sync login required. Disconnecting removes the Connection and deletes all Calendar Events bamboo-sync created. Does not affect the Google Identity.
 _Avoid_: integration, setup, account, session
+
+**Logout**:
+The act of clearing the User's local session (the `google-account-id` cookie) without deleting their Google Identity or Connection. After logout, the User must authenticate with Google again to access bamboo-sync, but the Google Identity is already known so OAuth completes without a new consent screen. Distinct from disconnecting, which removes the Connection.
+_Avoid_: sign out, log off, revoke
 
 **Calendar Event**:
 An event created by bamboo-sync in the User's primary Google Calendar, representing either a Time-off Entry or a Holiday. Time-off Entries and Holidays use different colours to distinguish them at a glance. If a colour is unavailable, both fall back to the same colour.
@@ -36,9 +44,17 @@ _Avoid_: entry, appointment, block
 The ongoing background process that reads Time-off Entries and Holidays from BambooHR and mirrors them in the User's Google Calendar — creating, updating, and deleting events to match BambooHR's current state. Only covers today and future dates; past entries are not synced. Runs once per day.
 _Avoid_: import, export, transfer, job
 
+**Sync Preview**:
+A confirmation step shown to the User during onboarding, after BambooHR credentials are validated but before the Connection is saved or the first Sync runs. Displays all upcoming Time-off Entries in full and a summary of Holidays (count + next upcoming). The User must confirm before the Connection is saved and the first Sync fires. Always shown, even when no entries exist.
+_Avoid_: preview, confirmation screen, review step
+
 **Management Page**:
 A minimal UI shown to the User after onboarding. Displays the current Connection status, the time of the next scheduled Sync, and options to update the BambooHR API Key or disconnect. Shows an error state if the last Sync failed (e.g. invalid API Key).
 _Avoid_: dashboard, settings, profile, admin panel
+
+**Authenticated Layout**:
+The persistent UI shell shown on all pages where a Google Identity is known (`/connect`, `/management`). Displays the User's Google avatar and email with a logout option. Always visible regardless of Connection state.
+_Avoid_: header, navbar, shell, wrapper
 
 ## Example dialogue
 

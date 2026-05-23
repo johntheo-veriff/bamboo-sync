@@ -1,6 +1,8 @@
 import { createFirebaseConnectionStore } from "@/modules/connection-store/firebase-adapter";
+import { createFirebaseGoogleIdentityStore } from "@/modules/google-identity-store/firebase-adapter";
 import { db } from "@/lib/firebase-admin";
 import { generateCsrfToken } from "@/lib/csrf";
+import { UserAvatar } from "@/components/UserAvatar";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { UpdateApiKeyForm, DisconnectButton } from "./actions";
@@ -45,13 +47,16 @@ export default async function ManagementPage() {
     redirect("/");
   }
 
-  const store = createFirebaseConnectionStore(db);
-  const connection = await store.get(googleAccountId);
+  const [connection, identity] = await Promise.all([
+    createFirebaseConnectionStore(db).get(googleAccountId),
+    createFirebaseGoogleIdentityStore(db).get(googleAccountId),
+  ]);
 
   if (!connection) {
     redirect("/connect");
   }
 
+  const email = identity?.email ?? "";
   const csrfToken = generateCsrfToken();
   cookieStore.set("csrf-token", csrfToken, {
     httpOnly: false,
@@ -65,7 +70,9 @@ export default async function ManagementPage() {
   const nextSyncLabel = formatNextSync(connection.nextSyncAt);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      <UserAvatar email={email} />
+      <div className="flex-1 flex items-center justify-center px-4 pb-8">
       <div className="w-full max-w-md space-y-4">
 
         {/* Header card */}
@@ -123,6 +130,7 @@ export default async function ManagementPage() {
           </div>
         </div>
 
+      </div>
       </div>
     </div>
   );

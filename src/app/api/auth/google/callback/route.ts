@@ -1,6 +1,7 @@
 import { db } from "@/lib/firebase-admin";
 import { exchangeGoogleCode, getGoogleUserInfo } from "@/lib/google-oauth";
 import { createFirebaseConnectionStore } from "@/modules/connection-store/firebase-adapter";
+import { createFirebaseGoogleIdentityStore } from "@/modules/google-identity-store/firebase-adapter";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
   try {
     const redirectUri = `${appUrl}/api/auth/google/callback`;
     const { accessToken, refreshToken } = await exchangeGoogleCode(code, redirectUri);
-    const { sub: googleAccountId } = await getGoogleUserInfo(accessToken);
+    const { sub: googleAccountId, email } = await getGoogleUserInfo(accessToken);
 
     const cookieStore = await cookies();
 
@@ -26,12 +27,17 @@ export async function GET(request: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 365, // 1 year — persists across browser sessions
       path: "/",
     });
 
+    // Persist Google Identity independently of the Connection so it survives disconnect/logout
+    const identityStore = createFirebaseGoogleIdentityStore(db);
+    await identityStore.save({ googleAccountId, refreshToken, email });
+
     // Check if this account already has a connection
-    const store = createFirebaseConnectionStore(db);
-    const existing = await store.get(googleAccountId);
+    const connectionStore = createFirebaseConnectionStore(db);
+    const existing = await connectionStore.get(googleAccountId);
 
     if (existing) {
       return NextResponse.redirect(`${appUrl}/management`);

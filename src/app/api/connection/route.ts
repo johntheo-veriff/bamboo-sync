@@ -78,9 +78,6 @@ export async function DELETE(request: Request) {
   // Delete the connection from Firestore
   await store.delete(googleAccountId);
 
-  // Clear the google-account-id cookie
-  cookieStore.delete("google-account-id");
-
   return new NextResponse(null, { status: 200 });
 }
 

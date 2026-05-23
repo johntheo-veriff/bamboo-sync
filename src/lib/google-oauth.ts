@@ -55,3 +55,26 @@ export async function getGoogleUserInfo(
   const data = (await res.json()) as { sub: string; email: string };
   return { sub: data.sub, email: data.email };
 }
+
+export async function refreshGoogleToken(
+  refreshToken: string
+): Promise<{ accessToken: string; refreshToken: string }> {
+  const res = await fetch(GOOGLE_TOKEN_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      refresh_token: refreshToken,
+      client_id: process.env.GOOGLE_CLIENT_ID ?? "",
+      client_secret: process.env.GOOGLE_CLIENT_SECRET ?? "",
+      grant_type: "refresh_token",
+    }).toString(),
+  });
+
+  if (!res.ok) throw new Error("Failed to refresh Google token");
+
+  const data = (await res.json()) as { access_token: string; refresh_token?: string };
+  return {
+    accessToken: data.access_token,
+    refreshToken: data.refresh_token ?? refreshToken,
+  };
+}
