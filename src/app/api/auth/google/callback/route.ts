@@ -1,5 +1,5 @@
 import { db } from "@/lib/firebase-admin";
-import { exchangeGoogleCode, getGoogleUserInfo } from "@/lib/google-oauth";
+import { exchangeGoogleCode, getGoogleUserInfo, GoogleOAuthError, GoogleOAuthNetworkError } from "@/lib/google-oauth";
 import { createFirebaseConnectionStore } from "@/modules/connection-store/firebase-adapter";
 import { createFirebaseGoogleIdentityStore } from "@/modules/google-identity-store/firebase-adapter";
 import { cookies } from "next/headers";
@@ -59,6 +59,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${appUrl}/connect`);
   } catch (err) {
     console.error("OAuth callback error:", err);
+    if (err instanceof GoogleOAuthNetworkError) {
+      return NextResponse.redirect(`${appUrl}/?error=google_network_error`);
+    }
+    if (err instanceof GoogleOAuthError) {
+      return NextResponse.redirect(`${appUrl}/?error=google_oauth_failed`);
+    }
     return NextResponse.redirect(`${appUrl}/?error=connection_failed`);
   }
 }

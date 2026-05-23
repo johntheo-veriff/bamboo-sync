@@ -1,3 +1,17 @@
+export class GoogleOAuthError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "GoogleOAuthError";
+  }
+}
+
+export class GoogleOAuthNetworkError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "GoogleOAuthNetworkError";
+  }
+}
+
 const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo";
@@ -26,19 +40,24 @@ export async function exchangeGoogleCode(
   code: string,
   redirectUri: string
 ): Promise<{ accessToken: string; refreshToken: string }> {
-  const res = await fetch(GOOGLE_TOKEN_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      code,
-      client_id: process.env.GOOGLE_CLIENT_ID ?? "",
-      client_secret: process.env.GOOGLE_CLIENT_SECRET ?? "",
-      redirect_uri: redirectUri,
-      grant_type: "authorization_code",
-    }).toString(),
-  });
+  let res: Response;
+  try {
+    res = await fetch(GOOGLE_TOKEN_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        code,
+        client_id: process.env.GOOGLE_CLIENT_ID ?? "",
+        client_secret: process.env.GOOGLE_CLIENT_SECRET ?? "",
+        redirect_uri: redirectUri,
+        grant_type: "authorization_code",
+      }).toString(),
+    });
+  } catch (err) {
+    throw new GoogleOAuthNetworkError("Network error exchanging Google OAuth code");
+  }
 
-  if (!res.ok) throw new Error("Failed to exchange Google OAuth code");
+  if (!res.ok) throw new GoogleOAuthError("Failed to exchange Google OAuth code");
 
   const data = (await res.json()) as { access_token: string; refresh_token: string };
   return { accessToken: data.access_token, refreshToken: data.refresh_token };
@@ -47,11 +66,16 @@ export async function exchangeGoogleCode(
 export async function getGoogleUserInfo(
   accessToken: string
 ): Promise<{ sub: string; email: string }> {
-  const res = await fetch(GOOGLE_USERINFO_URL, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
+  let res: Response;
+  try {
+    res = await fetch(GOOGLE_USERINFO_URL, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  } catch (err) {
+    throw new GoogleOAuthNetworkError("Network error fetching Google user info");
+  }
 
-  if (!res.ok) throw new Error("Failed to fetch Google user info");
+  if (!res.ok) throw new GoogleOAuthError("Failed to fetch Google user info");
 
   const data = (await res.json()) as { sub: string; email: string };
   return { sub: data.sub, email: data.email };
