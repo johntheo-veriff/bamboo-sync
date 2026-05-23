@@ -47,7 +47,7 @@
         "source": "**",
         "run": {
           "serviceId": "bamboo-sync-server",
-          "region": "europe-west1"
+          "region": "europe-west4"
         }
       }
     ]
