@@ -1,6 +1,7 @@
 import { db } from "@/lib/firebase-admin";
 import { createFirebaseConnectionStore } from "@/modules/connection-store/firebase-adapter";
 import { listBambooSyncEvents } from "@/modules/google-calendar-client";
+import { buildGoogleCalendarConfig } from "@/lib/google-config";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
@@ -19,17 +20,7 @@ export async function GET() {
     return NextResponse.json({ error: "Connection not found" }, { status: 404 });
   }
 
-  const calendarConfig = {
-    accessToken: connection.googleAccessToken,
-    refreshToken: connection.googleRefreshToken,
-    onTokenRefresh: async (newTokens: { accessToken: string; refreshToken: string }) => {
-      await store.save({
-        ...connection,
-        googleAccessToken: newTokens.accessToken,
-        googleRefreshToken: newTokens.refreshToken,
-      });
-    },
-  };
+  const calendarConfig = buildGoogleCalendarConfig(connection, store);
 
   try {
     const events = await listBambooSyncEvents(calendarConfig);

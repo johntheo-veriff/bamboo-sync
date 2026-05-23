@@ -56,5 +56,12 @@ export function createFirebaseConnectionStore(db: Firestore): ConnectionStore {
         nextSyncAt: Timestamp.fromDate(result.nextSyncAt),
       });
     },
+
+    async updateTokens(googleAccountId, tokens) {
+      await db.collection(COLLECTION).doc(googleAccountId).update({
+        googleAccessToken: tokens.accessToken,
+        googleRefreshToken: tokens.refreshToken,
+      });
+    },
   };
 }

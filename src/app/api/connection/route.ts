@@ -4,6 +4,7 @@ import {
   deleteEvent,
   listBambooSyncEvents,
 } from "@/modules/google-calendar-client";
+import { buildGoogleCalendarConfig } from "@/lib/google-config";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
@@ -53,17 +54,7 @@ export async function DELETE(request: Request) {
   // Best-effort: delete all bamboo-sync calendar events.
   // Even if this fails, we still remove the connection so the user is unblocked.
   try {
-    const calendarConfig = {
-      accessToken: connection.googleAccessToken,
-      refreshToken: connection.googleRefreshToken,
-      onTokenRefresh: async (newTokens: { accessToken: string; refreshToken: string }) => {
-        await store.save({
-          ...connection,
-          googleAccessToken: newTokens.accessToken,
-          googleRefreshToken: newTokens.refreshToken,
-        });
-      },
-    };
+    const calendarConfig = buildGoogleCalendarConfig(connection, store);
     const events = await listBambooSyncEvents(calendarConfig);
     await Promise.all(events.map((event) => deleteEvent(calendarConfig, event.googleEventId)));
   } catch (err) {

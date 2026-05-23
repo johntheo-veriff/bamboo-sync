@@ -22,4 +22,8 @@ export interface ConnectionStore {
     googleAccountId: string,
     result: { status: SyncStatus; error: string | null; nextSyncAt: Date }
   ): Promise<void>;
+  updateTokens(
+    googleAccountId: string,
+    tokens: { accessToken: string; refreshToken: string }
+  ): Promise<void>;
 }

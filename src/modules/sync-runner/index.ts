@@ -9,6 +9,7 @@ import {
 import { computeSyncDiff } from "@/modules/sync-engine";
 import { BambooEntry } from "@/modules/sync-engine/types";
 import { Connection, ConnectionStore, SyncStatus } from "@/modules/connection-store/types";
+import { buildGoogleCalendarConfig } from "@/lib/google-config";
 
 export function toBambooEntries(entries: WhosOutEntry[]): BambooEntry[] {
   return entries.map((e) => ({
@@ -29,17 +30,7 @@ export async function runSync(
     apiKey: connection.bambooApiKey,
   };
 
-  const googleConfig = {
-    accessToken: connection.googleAccessToken,
-    refreshToken: connection.googleRefreshToken,
-    onTokenRefresh: async (tokens: { accessToken: string; refreshToken: string }) => {
-      await store.save({
-        ...connection,
-        googleAccessToken: tokens.accessToken,
-        googleRefreshToken: tokens.refreshToken,
-      });
-    },
-  };
+  const googleConfig = buildGoogleCalendarConfig(connection, store);
 
   try {
     const [allEntries, employee, existingEvents] = await Promise.all([
