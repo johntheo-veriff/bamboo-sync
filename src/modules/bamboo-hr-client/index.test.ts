@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { fetchWhosOut } from "./index";
+import { fetchWhosOut, validateCredentials } from "./index";
 import { BambooAuthError, BambooNetworkError, BambooHRConfig } from "./types";
 
 const config: BambooHRConfig = { subdomain: "acme", apiKey: "test-key" };
@@ -85,5 +85,25 @@ describe("fetchWhosOut", () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("Network down")));
 
     await expect(fetchWhosOut(config)).rejects.toThrow(BambooNetworkError);
+  });
+});
+
+describe("validateCredentials", () => {
+  it("resolves when credentials are valid", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(mockResponse([])));
+
+    await expect(validateCredentials(config)).resolves.toBeUndefined();
+  });
+
+  it("throws BambooAuthError on 401", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(mockResponse({}, 401)));
+
+    await expect(validateCredentials(config)).rejects.toThrow(BambooAuthError);
+  });
+
+  it("throws BambooNetworkError when fetch rejects", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("Connection refused")));
+
+    await expect(validateCredentials(config)).rejects.toThrow(BambooNetworkError);
   });
 });

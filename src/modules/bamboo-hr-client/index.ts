@@ -76,6 +76,19 @@ export async function fetchCurrentEmployee(
   return { id: String(match.id), displayName: match.displayName, workEmail: match.workEmail };
 }
 
+export async function validateCredentials(config: BambooHRConfig): Promise<void> {
+  try {
+    await fetchWhosOut(config);
+  } catch (err) {
+    if (err instanceof BambooAuthError) {
+      throw err;
+    }
+    throw new BambooNetworkError(
+      err instanceof Error ? err.message : "Network request failed"
+    );
+  }
+}
+
 export async function fetchWhosOut(config: BambooHRConfig): Promise<WhosOutEntry[]> {
   const todayStr = today();
   const endStr = oneYearFromNow();

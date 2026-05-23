@@ -1,4 +1,4 @@
-import { fetchWhosOut } from "@/modules/bamboo-hr-client";
+import { validateCredentials } from "@/modules/bamboo-hr-client";
 import { BambooAuthError } from "@/modules/bamboo-hr-client/types";
 import { NextResponse } from "next/server";
 
@@ -16,7 +16,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    await fetchWhosOut({ subdomain, apiKey });
+    await validateCredentials({ subdomain, apiKey });
   } catch (err) {
     if (err instanceof BambooAuthError) {
       return NextResponse.json({ error: "Invalid BambooHR API key or subdomain" }, { status: 401 });
