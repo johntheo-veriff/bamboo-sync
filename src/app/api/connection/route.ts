@@ -50,23 +50,26 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "Connection not found" }, { status: 404 });
   }
 
-  // Delete all bamboo-sync calendar events
-  const calendarConfig = {
-    accessToken: connection.googleAccessToken,
-    refreshToken: connection.googleRefreshToken,
-    onTokenRefresh: async (newTokens: { accessToken: string; refreshToken: string }) => {
-      await store.save({
-        ...connection,
-        googleAccessToken: newTokens.accessToken,
-        googleRefreshToken: newTokens.refreshToken,
-      });
-    },
-  };
+  // Best-effort: delete all bamboo-sync calendar events.
+  // Even if this fails, we still remove the connection so the user is unblocked.
+  try {
+    const calendarConfig = {
+      accessToken: connection.googleAccessToken,
+      refreshToken: connection.googleRefreshToken,
+      onTokenRefresh: async (newTokens: { accessToken: string; refreshToken: string }) => {
+        await store.save({
+          ...connection,
+          googleAccessToken: newTokens.accessToken,
+          googleRefreshToken: newTokens.refreshToken,
+        });
+      },
+    };
+    const events = await listBambooSyncEvents(calendarConfig);
+    await Promise.all(events.map((event) => deleteEvent(calendarConfig, event.googleEventId)));
+  } catch (err) {
+    console.error("Failed to delete calendar events during disconnect:", err);
+  }
 
-  const events = await listBambooSyncEvents(calendarConfig);
-  await Promise.all(events.map((event) => deleteEvent(calendarConfig, event.googleEventId)));
-
-  // Delete the connection from Firestore
   await store.delete(googleAccountId);
 
   return new NextResponse(null, { status: 200 });
