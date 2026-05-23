@@ -1,7 +1,6 @@
 import { createFirebaseConnectionStore } from "@/modules/connection-store/firebase-adapter";
 import { createFirebaseGoogleIdentityStore } from "@/modules/google-identity-store/firebase-adapter";
 import { db } from "@/lib/firebase-admin";
-import { generateCsrfToken } from "@/lib/csrf";
 import { UserAvatar } from "@/components/UserAvatar";
 import { VeriffLogo } from "@/components/VeriffLogo";
 import { cookies } from "next/headers";
@@ -55,13 +54,6 @@ export default async function ManagementPage() {
   }
 
   const email = identity?.email ?? "";
-  const csrfToken = generateCsrfToken();
-  cookieStore.set("csrf-token", csrfToken, {
-    httpOnly: false,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    path: "/",
-  });
 
   const isError = connection.lastSyncStatus === "error";
   const isPending = connection.lastSyncStatus === "pending";
@@ -119,7 +111,7 @@ export default async function ManagementPage() {
             <p className="text-sm text-gray-400 mb-3">
               Removes all synced calendar events and stops future syncs.
             </p>
-            <DisconnectButton csrfToken={csrfToken} />
+            <DisconnectButton />
           </div>
 
         </div>

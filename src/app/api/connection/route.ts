@@ -4,9 +4,6 @@ import {
   deleteEvent,
   listBambooSyncEvents,
 } from "@/modules/google-calendar-client";
-import { fetchWhosOut } from "@/modules/bamboo-hr-client";
-import { BambooAuthError } from "@/modules/bamboo-hr-client/types";
-import { validateCsrfToken } from "@/lib/csrf";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
@@ -46,12 +43,6 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const csrfHeader = request.headers.get("X-CSRF-Token") ?? "";
-  const csrfCookie = cookieStore.get("csrf-token")?.value ?? "";
-  if (!validateCsrfToken(csrfHeader, csrfCookie)) {
-    return NextResponse.json({ error: "Invalid CSRF token" }, { status: 403 });
-  }
-
   const store = connectionStore();
   const connection = await store.get(googleAccountId);
 
@@ -81,51 +72,3 @@ export async function DELETE(request: Request) {
   return new NextResponse(null, { status: 200 });
 }
 
-export async function PATCH(request: Request) {
-  const cookieStore = await cookies();
-  const googleAccountId = cookieStore.get("google-account-id")?.value;
-
-  if (!googleAccountId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const csrfHeader = request.headers.get("X-CSRF-Token") ?? "";
-  const csrfCookie = cookieStore.get("csrf-token")?.value ?? "";
-  if (!validateCsrfToken(csrfHeader, csrfCookie)) {
-    return NextResponse.json({ error: "Invalid CSRF token" }, { status: 403 });
-  }
-
-  let body: { apiKey?: string };
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
-  }
-
-  const { apiKey } = body;
-  if (!apiKey) {
-    return NextResponse.json({ error: "apiKey is required" }, { status: 400 });
-  }
-
-  const store = connectionStore();
-  const connection = await store.get(googleAccountId);
-
-  if (!connection) {
-    return NextResponse.json({ error: "Connection not found" }, { status: 404 });
-  }
-
-  // Validate the new API key against BambooHR
-  try {
-    await fetchWhosOut({ subdomain: connection.bambooSubdomain, apiKey });
-  } catch (err) {
-    if (err instanceof BambooAuthError) {
-      return NextResponse.json({ error: "Invalid BambooHR API key" }, { status: 401 });
-    }
-    return NextResponse.json({ error: "Could not reach BambooHR" }, { status: 502 });
-  }
-
-  // Update the connection with the new API key
-  await store.save({ ...connection, bambooApiKey: apiKey });
-
-  return new NextResponse(null, { status: 200 });
-}

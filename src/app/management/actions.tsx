@@ -72,7 +72,7 @@ export function UpdateApiKeyForm({ csrfToken }: { csrfToken: string }) {
   );
 }
 
-export function DisconnectButton({ csrfToken }: { csrfToken: string }) {
+export function DisconnectButton() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,7 +83,6 @@ export function DisconnectButton({ csrfToken }: { csrfToken: string }) {
 
     const res = await fetch("/api/connection", {
       method: "DELETE",
-      headers: { "X-CSRF-Token": csrfToken },
     });
 
     if (!res.ok) {
