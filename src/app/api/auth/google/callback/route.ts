@@ -21,6 +21,10 @@ export async function GET(request: NextRequest) {
     const { accessToken, refreshToken } = await exchangeGoogleCode(code, redirectUri);
     const { sub: googleAccountId, email } = await getGoogleUserInfo(accessToken);
 
+    if (!email.endsWith("@veriff.com")) {
+      return NextResponse.redirect(`${appUrl}/?error=unauthorized_domain`);
+    }
+
     const cookieStore = await cookies();
 
     cookieStore.set("google-account-id", googleAccountId, {

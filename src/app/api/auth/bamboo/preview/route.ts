@@ -5,7 +5,7 @@ import { createFirebaseGoogleIdentityStore } from "@/modules/google-identity-sto
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-export async function POST(request: Request) {
+export async function GET() {
   const cookieStore = await cookies();
   const googleAccountId = cookieStore.get("google-account-id")?.value;
   const hasTokens = !!cookieStore.get("google-tokens")?.value;
@@ -14,16 +14,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Not authenticated with Google" }, { status: 401 });
   }
 
-  let body: { subdomain?: string; apiKey?: string };
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
-  }
-
-  const { subdomain, apiKey } = body;
+  const subdomain = process.env.BAMBOOHR_SUBDOMAIN;
+  const apiKey = process.env.BAMBOOHR_API_KEY;
   if (!subdomain || !apiKey) {
-    return NextResponse.json({ error: "subdomain and apiKey are required" }, { status: 400 });
+    return NextResponse.json({ error: "BambooHR not configured" }, { status: 500 });
   }
 
   try {
@@ -44,17 +38,15 @@ export async function POST(request: Request) {
       : allTimeOff;
 
     const holidayList = holidays.map((h) => ({ name: h.name, startDate: h.startDate }));
-    const nextHoliday = holidayList[0] ?? null;
 
     return NextResponse.json({
       timeOffEntries,
       holidays: holidayList,
       holidayCount: holidays.length,
-      nextHoliday,
     });
   } catch (err) {
     if (err instanceof BambooAuthError) {
-      return NextResponse.json({ error: "Invalid BambooHR API key or subdomain" }, { status: 401 });
+      return NextResponse.json({ error: "BambooHR authentication failed" }, { status: 500 });
     }
     return NextResponse.json({ error: "Could not reach BambooHR" }, { status: 502 });
   }

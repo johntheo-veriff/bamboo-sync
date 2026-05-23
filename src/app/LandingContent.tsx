@@ -2,11 +2,13 @@
 
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import { VeriffLogo } from "@/components/VeriffLogo";
 
 const ERROR_MESSAGES: Record<string, string> = {
   session_expired: "Session expired. Please sign in again.",
   google_cancelled: "Google sign-in was cancelled.",
   connection_failed: "Something went wrong. Please try again.",
+  unauthorized_domain: "Access restricted to Veriff accounts.",
 };
 
 function LandingPage() {
@@ -15,12 +17,16 @@ function LandingPage() {
   const error = urlError ? (ERROR_MESSAGES[urlError] ?? "An error occurred.") : null;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+    <div className="min-h-screen flex items-center justify-center bg-[#F5F5F5] px-4">
+      <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
         <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-gray-900 mb-2">Bamboo Sync</h1>
+          <div className="flex items-center gap-3 mb-4">
+            <VeriffLogo size={36} />
+            <span className="text-lg font-semibold text-[#1C2B2A]">Veriff</span>
+          </div>
+          <h1 className="text-2xl font-semibold text-[#1C2B2A] mb-2">BambooHR Sync</h1>
           <p className="text-gray-500 text-sm leading-relaxed">
-            Keeps your Google Calendar updated automatically whenever colleagues take time off in BambooHR.
+            Automatically syncs your time-off and company holidays from BambooHR into your Google Calendar.
           </p>
         </div>
 
@@ -32,11 +38,12 @@ function LandingPage() {
 
         <a
           href="/api/auth/google"
-          className="flex items-center justify-center gap-3 w-full py-2.5 px-4 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg transition-colors shadow-sm"
+          className="flex items-center justify-center gap-3 w-full py-2.5 px-4 bg-[#00E5CC] hover:bg-[#00CDB6] text-[#1C2B2A] text-sm font-semibold rounded-lg transition-colors"
         >
           <GoogleIcon />
           Sign in with Google
         </a>
+        <p className="mt-3 text-center text-xs text-gray-400">Veriff accounts only</p>
       </div>
     </div>
   );

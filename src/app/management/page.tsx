@@ -3,19 +3,17 @@ import { createFirebaseGoogleIdentityStore } from "@/modules/google-identity-sto
 import { db } from "@/lib/firebase-admin";
 import { generateCsrfToken } from "@/lib/csrf";
 import { UserAvatar } from "@/components/UserAvatar";
+import { VeriffLogo } from "@/components/VeriffLogo";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { UpdateApiKeyForm, DisconnectButton } from "./actions";
+import { DisconnectButton } from "./actions";
 
 function formatNextSync(date: Date): string {
   const now = new Date();
   const tomorrow = new Date(now);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
-  const time = date.toLocaleTimeString("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  const time = date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
 
   const isToday =
     date.getDate() === now.getDate() &&
@@ -70,67 +68,61 @@ export default async function ManagementPage() {
   const nextSyncLabel = formatNextSync(connection.nextSyncAt);
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-[#F5F5F5]">
       <UserAvatar email={email} />
       <div className="flex-1 flex items-center justify-center px-4 pb-8">
-      <div className="w-full max-w-md space-y-4">
+        <div className="w-full max-w-md space-y-4">
 
-        {/* Header card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
-          <div className="flex items-start justify-between mb-6">
-            <div>
-              <h1 className="text-2xl font-semibold text-gray-900">Bamboo Sync</h1>
-              <p className="text-gray-400 text-sm mt-0.5">{connection.bambooSubdomain}.bamboohr.com</p>
+          {/* Header card */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+            <div className="flex items-start justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <VeriffLogo size={32} />
+                <div>
+                  <h1 className="text-xl font-semibold text-[#1C2B2A]">BambooHR Sync</h1>
+                  <p className="text-gray-400 text-xs mt-0.5">workatveriff.bamboohr.com</p>
+                </div>
+              </div>
+              {isPending ? (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
+                  <span className="w-1.5 h-1.5 rounded-full bg-yellow-500" />
+                  Syncing…
+                </span>
+              ) : isError ? (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                  Error
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-[#E6FBF9] text-[#00A896]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#00E5CC]" />
+                  Active
+                </span>
+              )}
             </div>
-            {isPending ? (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
-                <span className="w-1.5 h-1.5 rounded-full bg-yellow-500" />
-                Syncing…
-              </span>
-            ) : isError ? (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                Error
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                Active
-              </span>
+
+            {isError && connection.lastSyncError && (
+              <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                {connection.lastSyncError}
+              </div>
             )}
-          </div>
 
-          {isError && connection.lastSyncError && (
-            <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-              {connection.lastSyncError}
+            <div className="text-sm text-gray-500">
+              <span className="text-gray-400">Next sync</span>
+              <span className="ml-2 text-[#1C2B2A]">{nextSyncLabel}</span>
             </div>
-          )}
-
-          <div className="text-sm text-gray-500">
-            <span className="text-gray-400">Next sync</span>
-            <span className="ml-2 text-gray-700">{nextSyncLabel}</span>
-          </div>
-        </div>
-
-        {/* Settings card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 space-y-6">
-          <div>
-            <p className="text-sm font-medium text-gray-700 mb-3">Update API key</p>
-            <UpdateApiKeyForm csrfToken={csrfToken} />
           </div>
 
-          <hr className="border-gray-100" />
-
-          <div>
-            <p className="text-sm font-medium text-gray-700 mb-1">Disconnect</p>
+          {/* Disconnect card */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+            <p className="text-sm font-medium text-[#1C2B2A] mb-1">Disconnect</p>
             <p className="text-sm text-gray-400 mb-3">
-              Removes all bamboo-sync calendar events and unlinks your account.
+              Removes all synced calendar events and stops future syncs.
             </p>
             <DisconnectButton csrfToken={csrfToken} />
           </div>
-        </div>
 
-      </div>
+        </div>
       </div>
     </div>
   );

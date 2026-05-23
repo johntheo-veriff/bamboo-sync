@@ -1,13 +1,11 @@
 import { db } from "@/lib/firebase-admin";
-import { fetchWhosOut } from "@/modules/bamboo-hr-client";
-import { BambooAuthError } from "@/modules/bamboo-hr-client/types";
 import { createFirebaseConnectionStore } from "@/modules/connection-store/firebase-adapter";
 import { createFirebaseGoogleIdentityStore } from "@/modules/google-identity-store/firebase-adapter";
 import { runSync } from "@/modules/sync-runner";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-export async function POST(request: Request) {
+export async function POST() {
   const cookieStore = await cookies();
   const googleAccountId = cookieStore.get("google-account-id")?.value;
   const tokensRaw = cookieStore.get("google-tokens")?.value;
@@ -23,25 +21,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid session" }, { status: 401 });
   }
 
-  let body: { subdomain?: string; apiKey?: string };
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
-  }
-
-  const { subdomain, apiKey } = body;
+  const subdomain = process.env.BAMBOOHR_SUBDOMAIN;
+  const apiKey = process.env.BAMBOOHR_API_KEY;
   if (!subdomain || !apiKey) {
-    return NextResponse.json({ error: "subdomain and apiKey are required" }, { status: 400 });
-  }
-
-  try {
-    await fetchWhosOut({ subdomain, apiKey });
-  } catch (err) {
-    if (err instanceof BambooAuthError) {
-      return NextResponse.json({ error: "Invalid BambooHR API key or subdomain" }, { status: 401 });
-    }
-    return NextResponse.json({ error: "Could not reach BambooHR" }, { status: 502 });
+    return NextResponse.json({ error: "BambooHR not configured" }, { status: 500 });
   }
 
   const identityStore = createFirebaseGoogleIdentityStore(db);
