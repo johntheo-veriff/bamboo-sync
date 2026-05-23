@@ -1,7 +1,6 @@
 import { fetchCurrentEmployee, fetchWhosOut } from "@/modules/bamboo-hr-client";
 import { BambooAuthError } from "@/modules/bamboo-hr-client/types";
-import { db } from "@/lib/firebase-admin";
-import { createFirebaseGoogleIdentityStore } from "@/modules/google-identity-store/firebase-adapter";
+import { getStores } from "@/lib/stores";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
@@ -21,7 +20,7 @@ export async function GET() {
   }
 
   try {
-    const identityStore = createFirebaseGoogleIdentityStore(db);
+    const { identityStore } = getStores();
     const identity = await identityStore.get(googleAccountId);
     const userEmail = identity?.email ?? "";
 

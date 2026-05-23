@@ -1,6 +1,6 @@
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { db } from "@/lib/firebase-admin";
-import { createFirebaseConnectionStore } from "@/modules/connection-store/firebase-adapter";
+import { getStores } from "@/lib/stores";
 import { runSync } from "@/modules/sync-runner";
 
 interface SyncLock {
@@ -32,7 +32,7 @@ export const scheduledSync = onSchedule({ schedule: "0 2 * * *", timeZone: "UTC"
   const lockedAt = new Date();
   await lockRef.set({ lockedAt, status: "running" } satisfies SyncLock);
 
-  const store = createFirebaseConnectionStore(db);
+  const { connectionStore: store } = getStores();
   const connections = await store.listAll();
 
   if (connections.length === 0) {

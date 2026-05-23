@@ -1,6 +1,4 @@
-import { db } from "@/lib/firebase-admin";
-import { createFirebaseConnectionStore } from "@/modules/connection-store/firebase-adapter";
-import { createFirebaseGoogleIdentityStore } from "@/modules/google-identity-store/firebase-adapter";
+import { getStores } from "@/lib/stores";
 import { runSync } from "@/modules/sync-runner";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
@@ -27,11 +25,10 @@ export async function POST() {
     return NextResponse.json({ error: "BambooHR not configured" }, { status: 500 });
   }
 
-  const identityStore = createFirebaseGoogleIdentityStore(db);
+  const { connectionStore, identityStore } = getStores();
   const identity = await identityStore.get(googleAccountId);
   const userEmail = identity?.email ?? "";
 
-  const store = createFirebaseConnectionStore(db);
   const connection = {
     googleAccountId,
     userEmail,
@@ -45,8 +42,8 @@ export async function POST() {
     createdAt: new Date(),
   };
 
-  await store.save(connection);
-  runSync(connection, store).catch(console.error);
+  await connectionStore.save(connection);
+  runSync(connection, connectionStore).catch(console.error);
 
   cookieStore.delete("google-tokens");
 

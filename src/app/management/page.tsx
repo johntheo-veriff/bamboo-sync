@@ -1,6 +1,4 @@
-import { createFirebaseConnectionStore } from "@/modules/connection-store/firebase-adapter";
-import { createFirebaseGoogleIdentityStore } from "@/modules/google-identity-store/firebase-adapter";
-import { db } from "@/lib/firebase-admin";
+import { getStores } from "@/lib/stores";
 import { UserAvatar } from "@/components/UserAvatar";
 import { VeriffLogo } from "@/components/VeriffLogo";
 import { cookies } from "next/headers";
@@ -44,9 +42,10 @@ export default async function ManagementPage() {
     redirect("/");
   }
 
+  const { connectionStore, identityStore } = getStores();
   const [connection, identity] = await Promise.all([
-    createFirebaseConnectionStore(db).get(googleAccountId),
-    createFirebaseGoogleIdentityStore(db).get(googleAccountId),
+    connectionStore.get(googleAccountId),
+    identityStore.get(googleAccountId),
   ]);
 
   if (!connection) {

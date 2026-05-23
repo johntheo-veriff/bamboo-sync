@@ -1,5 +1,4 @@
-import { db } from "@/lib/firebase-admin";
-import { createFirebaseConnectionStore } from "@/modules/connection-store/firebase-adapter";
+import { getStores } from "@/lib/stores";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import LandingContent from "./LandingContent";
@@ -9,8 +8,8 @@ export default async function Home() {
   const googleAccountId = cookieStore.get("google-account-id")?.value;
 
   if (googleAccountId) {
-    const store = createFirebaseConnectionStore(db);
-    const connection = await store.get(googleAccountId);
+    const { connectionStore } = getStores();
+    const connection = await connectionStore.get(googleAccountId);
     redirect(connection ? "/management" : "/api/auth/google/reconnect");
   }
 

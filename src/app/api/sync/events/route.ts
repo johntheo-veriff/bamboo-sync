@@ -1,5 +1,4 @@
-import { db } from "@/lib/firebase-admin";
-import { createFirebaseConnectionStore } from "@/modules/connection-store/firebase-adapter";
+import { getStores } from "@/lib/stores";
 import { listBambooSyncEvents } from "@/modules/google-calendar-client";
 import { buildGoogleCalendarConfig } from "@/lib/google-config";
 import { cookies } from "next/headers";
@@ -13,14 +12,14 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const store = createFirebaseConnectionStore(db);
-  const connection = await store.get(googleAccountId);
+  const { connectionStore } = getStores();
+  const connection = await connectionStore.get(googleAccountId);
 
   if (!connection) {
     return NextResponse.json({ error: "Connection not found" }, { status: 404 });
   }
 
-  const calendarConfig = buildGoogleCalendarConfig(connection, store);
+  const calendarConfig = buildGoogleCalendarConfig(connection, connectionStore);
 
   try {
     const events = await listBambooSyncEvents(calendarConfig);

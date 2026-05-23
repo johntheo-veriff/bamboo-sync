@@ -1,5 +1,4 @@
-import { db } from "@/lib/firebase-admin";
-import { createFirebaseGoogleIdentityStore } from "@/modules/google-identity-store/firebase-adapter";
+import { getStores } from "@/lib/stores";
 import { UserAvatar } from "@/components/UserAvatar";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -14,7 +13,7 @@ export default async function ConnectPage() {
     redirect("/");
   }
 
-  const identityStore = createFirebaseGoogleIdentityStore(db);
+  const { identityStore } = getStores();
   const identity = await identityStore.get(googleAccountId);
   const email = identity?.email ?? "";
 
