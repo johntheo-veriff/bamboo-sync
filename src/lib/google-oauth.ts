@@ -16,7 +16,7 @@ export function getGoogleAuthUrl(redirectUri: string, state?: string): string {
     scope: SCOPES,
     access_type: "offline",
     prompt: "consent",
-    hd: "veriff.com",
+    hd: "veriff.net",
     ...(state ? { state } : {}),
   });
   return `${GOOGLE_AUTH_URL}?${params}`;
