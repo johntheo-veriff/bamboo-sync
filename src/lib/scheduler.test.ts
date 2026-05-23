@@ -30,8 +30,8 @@ vi.mock("@/lib/firebase-admin", () => ({
   adminApp: {},
 }));
 
-vi.mock("@/modules/connection-store/firebase-adapter", () => ({
-  createFirebaseConnectionStore: vi.fn(),
+vi.mock("@/lib/stores", () => ({
+  getStores: vi.fn(),
 }));
 
 vi.mock("@/modules/sync-runner", () => ({
@@ -42,7 +42,7 @@ vi.mock("firebase-functions/v2/scheduler", () => ({
   onSchedule: vi.fn((_, handler) => handler),
 }));
 
-import { createFirebaseConnectionStore } from "@/modules/connection-store/firebase-adapter";
+import { getStores } from "@/lib/stores";
 import { runSync } from "@/modules/sync-runner";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 
@@ -93,7 +93,7 @@ describe("scheduledSync", () => {
 
     const connections = [makeConnection("user-1"), makeConnection("user-2"), makeConnection("user-3")];
     const store = makeStore(connections);
-    vi.mocked(createFirebaseConnectionStore).mockReturnValue(store);
+    vi.mocked(getStores).mockReturnValue({ connectionStore: store, identityStore: {} as never });
     vi.mocked(runSync).mockResolvedValue({ status: "ok", error: null });
 
     const { scheduledSync } = await import("@/lib/scheduler");
@@ -111,7 +111,7 @@ describe("scheduledSync", () => {
 
     const connections = [makeConnection("user-1"), makeConnection("user-2"), makeConnection("user-3")];
     const store = makeStore(connections);
-    vi.mocked(createFirebaseConnectionStore).mockReturnValue(store);
+    vi.mocked(getStores).mockReturnValue({ connectionStore: store, identityStore: {} as never });
     vi.mocked(runSync)
       .mockResolvedValueOnce({ status: "ok", error: null })
       .mockRejectedValueOnce(new Error("Something went wrong"))
@@ -128,7 +128,7 @@ describe("scheduledSync", () => {
     mockLockRef.set.mockResolvedValue(undefined);
 
     const store = makeStore([]);
-    vi.mocked(createFirebaseConnectionStore).mockReturnValue(store);
+    vi.mocked(getStores).mockReturnValue({ connectionStore: store, identityStore: {} as never });
 
     const { scheduledSync } = await import("@/lib/scheduler");
     await expect((scheduledSync as unknown as () => Promise<void>)()).resolves.not.toThrow();
@@ -141,7 +141,7 @@ describe("scheduledSync", () => {
     mockLockRef.set.mockResolvedValue(undefined);
 
     const store = makeStore([]);
-    vi.mocked(createFirebaseConnectionStore).mockReturnValue(store);
+    vi.mocked(getStores).mockReturnValue({ connectionStore: store, identityStore: {} as never });
 
     const { scheduledSync } = await import("@/lib/scheduler");
 
@@ -165,7 +165,7 @@ describe("scheduledSync — idempotency guard", () => {
     mockLockRef.set.mockResolvedValue(undefined);
 
     const store = makeStore([makeConnection("user-1")]);
-    vi.mocked(createFirebaseConnectionStore).mockReturnValue(store);
+    vi.mocked(getStores).mockReturnValue({ connectionStore: store, identityStore: {} as never });
     vi.mocked(runSync).mockResolvedValue({ status: "ok", error: null });
 
     const { scheduledSync } = await import("@/lib/scheduler");
@@ -185,7 +185,7 @@ describe("scheduledSync — idempotency guard", () => {
     mockLockRef.set.mockResolvedValue(undefined);
 
     const store = makeStore([makeConnection("user-1")]);
-    vi.mocked(createFirebaseConnectionStore).mockReturnValue(store);
+    vi.mocked(getStores).mockReturnValue({ connectionStore: store, identityStore: {} as never });
     vi.mocked(runSync).mockResolvedValue({ status: "ok", error: null });
 
     const { scheduledSync } = await import("@/lib/scheduler");
@@ -202,7 +202,7 @@ describe("scheduledSync — idempotency guard", () => {
     mockLockRef.set.mockResolvedValue(undefined);
 
     const store = makeStore([makeConnection("user-1")]);
-    vi.mocked(createFirebaseConnectionStore).mockReturnValue(store);
+    vi.mocked(getStores).mockReturnValue({ connectionStore: store, identityStore: {} as never });
     vi.mocked(runSync).mockResolvedValue({ status: "ok", error: null });
 
     const { scheduledSync } = await import("@/lib/scheduler");
@@ -218,7 +218,7 @@ describe("scheduledSync — idempotency guard", () => {
     mockLockRef.set.mockResolvedValue(undefined);
 
     const store = makeStore([makeConnection("user-1")]);
-    vi.mocked(createFirebaseConnectionStore).mockReturnValue(store);
+    vi.mocked(getStores).mockReturnValue({ connectionStore: store, identityStore: {} as never });
     vi.mocked(runSync).mockResolvedValue({ status: "ok", error: null });
 
     const { scheduledSync } = await import("@/lib/scheduler");

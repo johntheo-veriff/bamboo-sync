@@ -1,6 +1,5 @@
-import { db } from "@/lib/firebase-admin";
+import { getStores } from "@/lib/stores";
 import { refreshGoogleToken } from "@/lib/google-oauth";
-import { createFirebaseGoogleIdentityStore } from "@/modules/google-identity-store/firebase-adapter";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -13,8 +12,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${appUrl}/`);
   }
 
-  const store = createFirebaseGoogleIdentityStore(db);
-  const identity = await store.get(googleAccountId);
+  const { identityStore } = getStores();
+  const identity = await identityStore.get(googleAccountId);
 
   if (!identity) {
     cookieStore.delete("google-account-id");
@@ -25,7 +24,7 @@ export async function GET(request: NextRequest) {
     const { accessToken, refreshToken } = await refreshGoogleToken(identity.refreshToken);
 
     if (refreshToken !== identity.refreshToken) {
-      await store.save({ ...identity, refreshToken });
+      await identityStore.save({ ...identity, refreshToken });
     }
 
     cookieStore.set("google-tokens", JSON.stringify({ accessToken, refreshToken }), {

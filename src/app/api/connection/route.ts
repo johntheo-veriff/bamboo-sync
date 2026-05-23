@@ -1,15 +1,10 @@
-import { createFirebaseConnectionStore } from "@/modules/connection-store/firebase-adapter";
-import { db } from "@/lib/firebase-admin";
+import { getStores } from "@/lib/stores";
 import {
   deleteEvent,
   listBambooSyncEvents,
 } from "@/modules/google-calendar-client";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-
-function connectionStore() {
-  return createFirebaseConnectionStore(db);
-}
 
 export async function GET() {
   const cookieStore = await cookies();
@@ -19,8 +14,8 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const store = connectionStore();
-  const connection = await store.get(googleAccountId);
+  const { connectionStore } = getStores();
+  const connection = await connectionStore.get(googleAccountId);
 
   if (!connection) {
     return NextResponse.json({ error: "Connection not found" }, { status: 404 });
@@ -43,8 +38,8 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const store = connectionStore();
-  const connection = await store.get(googleAccountId);
+  const { connectionStore } = getStores();
+  const connection = await connectionStore.get(googleAccountId);
 
   if (!connection) {
     return NextResponse.json({ error: "Connection not found" }, { status: 404 });
@@ -57,7 +52,7 @@ export async function DELETE(request: Request) {
       accessToken: connection.googleAccessToken,
       refreshToken: connection.googleRefreshToken,
       onTokenRefresh: async (newTokens: { accessToken: string; refreshToken: string }) => {
-        await store.save({
+        await connectionStore.save({
           ...connection,
           googleAccessToken: newTokens.accessToken,
           googleRefreshToken: newTokens.refreshToken,
@@ -70,7 +65,7 @@ export async function DELETE(request: Request) {
     console.error("Failed to delete calendar events during disconnect:", err);
   }
 
-  await store.delete(googleAccountId);
+  await connectionStore.delete(googleAccountId);
 
   return new NextResponse(null, { status: 200 });
 }

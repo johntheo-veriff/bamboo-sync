@@ -1,5 +1,4 @@
-import { db } from "@/lib/firebase-admin";
-import { createFirebaseConnectionStore } from "@/modules/connection-store/firebase-adapter";
+import { getStores } from "@/lib/stores";
 import { runSync } from "@/modules/sync-runner";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
@@ -12,14 +11,14 @@ export async function POST() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const store = createFirebaseConnectionStore(db);
-  const connection = await store.get(googleAccountId);
+  const { connectionStore } = getStores();
+  const connection = await connectionStore.get(googleAccountId);
 
   if (!connection) {
     return NextResponse.json({ error: "Connection not found" }, { status: 404 });
   }
 
-  const result = await runSync(connection, store);
+  const result = await runSync(connection, connectionStore);
 
   if (result.status === "error") {
     return NextResponse.json({ error: result.error }, { status: 500 });

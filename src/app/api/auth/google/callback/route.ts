@@ -1,7 +1,5 @@
-import { db } from "@/lib/firebase-admin";
+import { getStores } from "@/lib/stores";
 import { exchangeGoogleCode, getGoogleUserInfo } from "@/lib/google-oauth";
-import { createFirebaseConnectionStore } from "@/modules/connection-store/firebase-adapter";
-import { createFirebaseGoogleIdentityStore } from "@/modules/google-identity-store/firebase-adapter";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -35,12 +33,12 @@ export async function GET(request: NextRequest) {
       path: "/",
     });
 
+    const { connectionStore, identityStore } = getStores();
+
     // Persist Google Identity independently of the Connection so it survives disconnect/logout
-    const identityStore = createFirebaseGoogleIdentityStore(db);
     await identityStore.save({ googleAccountId, refreshToken, email });
 
     // Check if this account already has a connection
-    const connectionStore = createFirebaseConnectionStore(db);
     const existing = await connectionStore.get(googleAccountId);
 
     if (existing) {
