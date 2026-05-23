@@ -14,7 +14,7 @@ function OnboardingForm() {
   const searchParams = useSearchParams();
   const urlError = searchParams.get("error");
 
-  const [subdomain, setSubdomain] = useState("");
+  const [subdomain, setSubdomain] = useState(searchParams.get("subdomain") ?? "");
   const [apiKey, setApiKey] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(

@@ -4,7 +4,7 @@ import {
   deleteEvent,
   listBambooSyncEvents,
 } from "@/modules/google-calendar-client";
-import { fetchTimeOffEntries } from "@/modules/bamboo-hr-client";
+import { fetchWhosOut } from "@/modules/bamboo-hr-client";
 import { BambooAuthError } from "@/modules/bamboo-hr-client/types";
 import { validateCsrfToken } from "@/lib/csrf";
 import { cookies } from "next/headers";
@@ -119,7 +119,7 @@ export async function PATCH(request: Request) {
 
   // Validate the new API key against BambooHR
   try {
-    await fetchTimeOffEntries({ subdomain: connection.bambooSubdomain, apiKey });
+    await fetchWhosOut({ subdomain: connection.bambooSubdomain, apiKey });
   } catch (err) {
     if (err instanceof BambooAuthError) {
       return NextResponse.json({ error: "Invalid BambooHR API key" }, { status: 401 });

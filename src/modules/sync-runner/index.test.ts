@@ -3,8 +3,7 @@ import { runSync } from "./index";
 import { Connection, ConnectionStore } from "@/modules/connection-store/types";
 
 vi.mock("@/modules/bamboo-hr-client", () => ({
-  fetchTimeOffEntries: vi.fn(),
-  fetchHolidays: vi.fn(),
+  fetchWhosOut: vi.fn(),
 }));
 
 vi.mock("@/modules/google-calendar-client", () => ({
@@ -14,7 +13,7 @@ vi.mock("@/modules/google-calendar-client", () => ({
   deleteEvent: vi.fn(),
 }));
 
-import { fetchTimeOffEntries, fetchHolidays } from "@/modules/bamboo-hr-client";
+import { fetchWhosOut } from "@/modules/bamboo-hr-client";
 import {
   listBambooSyncEvents,
   createEvent,
@@ -46,8 +45,7 @@ function makeStore(overrides: Partial<ConnectionStore> = {}): ConnectionStore {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(fetchTimeOffEntries).mockResolvedValue([]);
-  vi.mocked(fetchHolidays).mockResolvedValue([]);
+  vi.mocked(fetchWhosOut).mockResolvedValue([]);
   vi.mocked(listBambooSyncEvents).mockResolvedValue([]);
   vi.mocked(createEvent).mockResolvedValue({ googleEventId: "g-new" });
 });
@@ -65,9 +63,9 @@ describe("runSync", () => {
     );
   });
 
-  it("creates Calendar Events for new BambooHR time-off entries", async () => {
-    vi.mocked(fetchTimeOffEntries).mockResolvedValue([
-      { id: "to-1", name: "PTO", startDate: "2025-07-01", endDate: "2025-07-03" },
+  it("creates Calendar Events for time-off entries", async () => {
+    vi.mocked(fetchWhosOut).mockResolvedValue([
+      { id: "to-1", type: "time-off", name: "PTO", startDate: "2025-07-01", endDate: "2025-07-03" },
     ]);
     const store = makeStore();
 
@@ -79,9 +77,9 @@ describe("runSync", () => {
     );
   });
 
-  it("creates Calendar Events for new Holidays", async () => {
-    vi.mocked(fetchHolidays).mockResolvedValue([
-      { id: "h-1", name: "Christmas", startDate: "2025-12-25", endDate: "2025-12-25" },
+  it("creates Calendar Events for holidays", async () => {
+    vi.mocked(fetchWhosOut).mockResolvedValue([
+      { id: "h-1", type: "holiday", name: "Christmas", startDate: "2025-12-25", endDate: "2025-12-25" },
     ]);
     const store = makeStore();
 
@@ -112,7 +110,7 @@ describe("runSync", () => {
   });
 
   it("returns error and updates sync result when BambooHR fetch fails", async () => {
-    vi.mocked(fetchTimeOffEntries).mockRejectedValue(new Error("BambooHR down"));
+    vi.mocked(fetchWhosOut).mockRejectedValue(new Error("BambooHR down"));
     const store = makeStore();
 
     const result = await runSync(mockConnection, store);

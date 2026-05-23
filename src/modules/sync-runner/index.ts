@@ -1,4 +1,4 @@
-import { fetchHolidays, fetchTimeOffEntries } from "@/modules/bamboo-hr-client";
+import { fetchWhosOut } from "@/modules/bamboo-hr-client";
 import {
   createEvent,
   deleteEvent,
@@ -6,7 +6,6 @@ import {
   updateEvent,
 } from "@/modules/google-calendar-client";
 import { computeSyncDiff } from "@/modules/sync-engine";
-import { BambooEntry } from "@/modules/sync-engine/types";
 import { Connection, ConnectionStore, SyncStatus } from "@/modules/connection-store/types";
 
 export async function runSync(
@@ -31,16 +30,10 @@ export async function runSync(
   };
 
   try {
-    const [timeOffEntries, holidays, existingEvents] = await Promise.all([
-      fetchTimeOffEntries(bambooConfig),
-      fetchHolidays(bambooConfig),
+    const [bambooEntries, existingEvents] = await Promise.all([
+      fetchWhosOut(bambooConfig),
       listBambooSyncEvents(googleConfig),
     ]);
-
-    const bambooEntries: BambooEntry[] = [
-      ...timeOffEntries.map((e) => ({ ...e, type: "time-off" as const })),
-      ...holidays.map((e) => ({ ...e, type: "holiday" as const })),
-    ];
 
     const diff = computeSyncDiff(bambooEntries, existingEvents);
 

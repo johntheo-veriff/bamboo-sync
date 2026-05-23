@@ -3,7 +3,7 @@ import { POST } from "./route";
 import { BambooAuthError } from "@/modules/bamboo-hr-client/types";
 
 vi.mock("@/modules/bamboo-hr-client", () => ({
-  fetchTimeOffEntries: vi.fn(),
+  fetchWhosOut: vi.fn(),
 }));
 
 vi.mock("next/headers", () => ({
@@ -16,7 +16,7 @@ vi.mock("next/headers", () => ({
   ),
 }));
 
-import { fetchTimeOffEntries } from "@/modules/bamboo-hr-client";
+import { fetchWhosOut } from "@/modules/bamboo-hr-client";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -32,7 +32,7 @@ function makeRequest(body: unknown) {
 
 describe("POST /api/auth/bamboo/validate", () => {
   it("returns 200 when BambooHR credentials are valid", async () => {
-    vi.mocked(fetchTimeOffEntries).mockResolvedValue([]);
+    vi.mocked(fetchWhosOut).mockResolvedValue([]);
 
     const res = await POST(makeRequest({ subdomain: "acme", apiKey: "valid-key" }));
 
@@ -42,7 +42,7 @@ describe("POST /api/auth/bamboo/validate", () => {
   });
 
   it("returns 401 when API key is invalid", async () => {
-    vi.mocked(fetchTimeOffEntries).mockRejectedValue(new BambooAuthError());
+    vi.mocked(fetchWhosOut).mockRejectedValue(new BambooAuthError());
 
     const res = await POST(makeRequest({ subdomain: "acme", apiKey: "bad-key" }));
 
@@ -62,7 +62,7 @@ describe("POST /api/auth/bamboo/validate", () => {
   });
 
   it("returns 502 when BambooHR is unreachable", async () => {
-    vi.mocked(fetchTimeOffEntries).mockRejectedValue(new Error("Network error"));
+    vi.mocked(fetchWhosOut).mockRejectedValue(new Error("Network error"));
 
     const res = await POST(makeRequest({ subdomain: "acme", apiKey: "key" }));
     expect(res.status).toBe(502);

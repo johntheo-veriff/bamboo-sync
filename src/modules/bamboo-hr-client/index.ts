@@ -2,8 +2,7 @@ import {
   BambooAuthError,
   BambooNetworkError,
   BambooHRConfig,
-  TimeOffEntry,
-  Holiday,
+  WhosOutEntry,
 } from "./types";
 
 function toISODate(date: Date): string {
@@ -50,39 +49,29 @@ async function bambooFetch(url: string, config: BambooHRConfig): Promise<unknown
   return response.json();
 }
 
-export async function fetchTimeOffEntries(
-  config: BambooHRConfig
-): Promise<TimeOffEntry[]> {
-  const todayStr = today();
-  const url = `${baseUrl(config.subdomain)}/time_off/requests/?status=approved&start=${todayStr}`;
-
-  const data = await bambooFetch(url, config);
-  const items = Array.isArray(data) ? data : [];
-
-  return items
-    .map((item: Record<string, unknown>) => ({
-      id: String(item.id),
-      name: String(item.name),
-      startDate: String(item.start),
-      endDate: String(item.end),
-    }))
-    .filter((entry) => entry.startDate >= todayStr);
+interface WhosOutApiItem {
+  id: number;
+  type: "timeOff" | "holiday";
+  name: string;
+  start: string;
+  end: string;
 }
 
-export async function fetchHolidays(config: BambooHRConfig): Promise<Holiday[]> {
+export async function fetchWhosOut(config: BambooHRConfig): Promise<WhosOutEntry[]> {
   const todayStr = today();
   const endStr = oneYearFromNow();
-  const url = `${baseUrl(config.subdomain)}/holidays/holidays/?start=${todayStr}&end=${endStr}`;
+  const url = `${baseUrl(config.subdomain)}/time_off/whos_out?start=${todayStr}&end=${endStr}`;
 
   const data = await bambooFetch(url, config);
-  const items = Array.isArray(data) ? data : [];
+  const items: WhosOutApiItem[] = Array.isArray(data) ? (data as WhosOutApiItem[]) : [];
 
   return items
-    .map((item: Record<string, unknown>) => ({
+    .map((item) => ({
       id: String(item.id),
-      name: String(item.name),
-      startDate: String(item.start),
-      endDate: String(item.end),
+      type: item.type === "timeOff" ? ("time-off" as const) : ("holiday" as const),
+      name: item.name,
+      startDate: item.start,
+      endDate: item.end,
     }))
     .filter((entry) => entry.startDate >= todayStr);
 }

@@ -17,15 +17,9 @@ export interface BambooHRConfig {
   apiKey: string;
 }
 
-export interface TimeOffEntry {
+export interface WhosOutEntry {
   id: string;
-  name: string;
-  startDate: string;
-  endDate: string;
-}
-
-export interface Holiday {
-  id: string;
+  type: "time-off" | "holiday";
   name: string;
   startDate: string;
   endDate: string;
