@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { runSync } from "./index";
+import { runSync, toBambooEntries } from "./index";
 import { Connection, ConnectionStore } from "@/modules/connection-store/types";
 
 vi.mock("@/modules/bamboo-hr-client", () => ({
@@ -134,5 +134,47 @@ describe("runSync", () => {
     const diff = call.nextSyncAt.getTime() - before;
     expect(diff).toBeGreaterThanOrEqual(23 * 60 * 60 * 1000);
     expect(diff).toBeLessThanOrEqual(25 * 60 * 60 * 1000);
+  });
+});
+
+describe("toBambooEntries", () => {
+  it("returns empty array when given empty array", () => {
+    expect(toBambooEntries([])).toEqual([]);
+  });
+
+  it("tags time-off entries with type 'time-off'", () => {
+    const result = toBambooEntries([
+      { id: "to-1", type: "time-off", name: "PTO", startDate: "2025-07-01", endDate: "2025-07-03" },
+    ]);
+    expect(result).toHaveLength(1);
+    expect(result[0].type).toBe("time-off");
+  });
+
+  it("tags holiday entries with type 'holiday'", () => {
+    const result = toBambooEntries([
+      { id: "h-1", type: "holiday", name: "Christmas", startDate: "2025-12-25", endDate: "2025-12-25" },
+    ]);
+    expect(result).toHaveLength(1);
+    expect(result[0].type).toBe("holiday");
+  });
+
+  it("preserves all fields from the source entries", () => {
+    const result = toBambooEntries([
+      { id: "to-1", type: "time-off", name: "Vacation", startDate: "2025-08-01", endDate: "2025-08-05" },
+      { id: "h-2", type: "holiday", name: "New Year", startDate: "2026-01-01", endDate: "2026-01-01" },
+    ]);
+    expect(result).toEqual([
+      { id: "to-1", type: "time-off", name: "Vacation", startDate: "2025-08-01", endDate: "2025-08-05" },
+      { id: "h-2", type: "holiday", name: "New Year", startDate: "2026-01-01", endDate: "2026-01-01" },
+    ]);
+  });
+
+  it("combined output includes both time-off and holiday entries", () => {
+    const result = toBambooEntries([
+      { id: "to-1", type: "time-off", name: "PTO", startDate: "2025-07-01", endDate: "2025-07-03" },
+      { id: "h-1", type: "holiday", name: "Labor Day", startDate: "2025-09-01", endDate: "2025-09-01" },
+    ]);
+    expect(result).toHaveLength(2);
+    expect(result.map((e) => e.type)).toEqual(["time-off", "holiday"]);
   });
 });

@@ -1,4 +1,5 @@
 import { fetchCurrentEmployee, fetchWhosOut } from "@/modules/bamboo-hr-client";
+import { WhosOutEntry } from "@/modules/bamboo-hr-client/types";
 import {
   createEvent,
   deleteEvent,
@@ -6,7 +7,18 @@ import {
   updateEvent,
 } from "@/modules/google-calendar-client";
 import { computeSyncDiff } from "@/modules/sync-engine";
+import { BambooEntry } from "@/modules/sync-engine/types";
 import { Connection, ConnectionStore, SyncStatus } from "@/modules/connection-store/types";
+
+export function toBambooEntries(entries: WhosOutEntry[]): BambooEntry[] {
+  return entries.map((e) => ({
+    id: e.id,
+    type: e.type,
+    name: e.name,
+    startDate: e.startDate,
+    endDate: e.endDate,
+  }));
+}
 
 export async function runSync(
   connection: Connection,
@@ -36,9 +48,11 @@ export async function runSync(
       listBambooSyncEvents(googleConfig),
     ]);
 
-    const bambooEntries = employee
+    const filtered = employee
       ? allEntries.filter((e) => e.type === "holiday" || e.name === employee.displayName)
       : allEntries;
+
+    const bambooEntries = toBambooEntries(filtered);
 
     const diff = computeSyncDiff(bambooEntries, existingEvents);
 
