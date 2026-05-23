@@ -73,7 +73,8 @@ describe("createEvent", () => {
     expect(body.summary).toBe("Annual Leave");
     expect(body.start).toEqual({ date: "2025-07-01" });
     expect(body.end).toEqual({ date: "2025-07-06" });
-    expect(body.eventType).toBe("outOfOffice");
+    expect(body.transparency).toBe("opaque");
+    expect(body.eventType).toBeUndefined();
   });
 
   it("stores bambooId and bambooType in extendedProperties", async () => {
@@ -147,7 +148,7 @@ describe("listBambooSyncEvents", () => {
           id: "g-1",
           summary: "Annual Leave",
           start: { date: "2025-07-01" },
-          end: { date: "2025-07-05" },
+          end: { date: "2025-07-06" },
           extendedProperties: {
             private: { bambooId: "b-1", bambooType: "time-off" },
           },
@@ -156,7 +157,7 @@ describe("listBambooSyncEvents", () => {
           id: "g-2",
           summary: "Christmas",
           start: { date: "2025-12-25" },
-          end: { date: "2025-12-25" },
+          end: { date: "2025-12-26" },
           extendedProperties: {
             private: { bambooId: "b-2", bambooType: "holiday" },
           },
@@ -189,7 +190,9 @@ describe("listBambooSyncEvents", () => {
     });
 
     const [url] = mockFetch.mock.calls[0] as [string, RequestInit];
-    expect(url).toContain("privateExtendedProperty=bambooId");
+    expect(url).toContain("timeMin=");
+    expect(url).toContain("timeMax=");
+    expect(url).not.toContain("privateExtendedProperty");
   });
 });
 
