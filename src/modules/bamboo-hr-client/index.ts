@@ -2,6 +2,7 @@ import {
   BambooAuthError,
   BambooNetworkError,
   BambooHRConfig,
+  EmployeeInfo,
   WhosOutEntry,
 } from "./types";
 
@@ -55,6 +56,24 @@ interface WhosOutApiItem {
   name: string;
   start: string;
   end: string;
+}
+
+interface EmployeeDirectoryResponse {
+  employees: Array<{ id: number; displayName: string; workEmail: string }>;
+}
+
+export async function fetchCurrentEmployee(
+  config: BambooHRConfig,
+  email: string
+): Promise<EmployeeInfo | null> {
+  const url = `${baseUrl(config.subdomain)}/employees/directory`;
+  const data = (await bambooFetch(url, config)) as EmployeeDirectoryResponse;
+  const employees = data.employees ?? [];
+  const match = employees.find(
+    (e) => e.workEmail?.toLowerCase() === email.toLowerCase()
+  );
+  if (!match) return null;
+  return { id: String(match.id), displayName: match.displayName, workEmail: match.workEmail };
 }
 
 export async function fetchWhosOut(config: BambooHRConfig): Promise<WhosOutEntry[]> {

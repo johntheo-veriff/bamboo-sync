@@ -24,3 +24,9 @@ export interface WhosOutEntry {
   startDate: string;
   endDate: string;
 }
+
+export interface EmployeeInfo {
+  id: string;
+  displayName: string;
+  workEmail: string;
+}

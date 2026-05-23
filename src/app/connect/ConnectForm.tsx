@@ -6,6 +6,7 @@ import type { WhosOutEntry } from "@/modules/bamboo-hr-client/types";
 
 interface PreviewData {
   timeOffEntries: WhosOutEntry[];
+  holidays: { name: string; startDate: string }[];
   holidayCount: number;
   nextHoliday: { name: string; startDate: string } | null;
 }
@@ -56,7 +57,7 @@ function SyncPreview({
     router.push("/management");
   }
 
-  const { timeOffEntries, holidayCount, nextHoliday } = preview;
+  const { timeOffEntries, holidayCount, holidays } = preview;
   const hasAnything = timeOffEntries.length > 0 || holidayCount > 0;
 
   return (
@@ -103,11 +104,14 @@ function SyncPreview({
             {holidayCount === 0 ? (
               <p className="text-sm text-gray-400 italic">None found</p>
             ) : (
-              <p className="text-sm text-gray-500">
-                {nextHoliday && (
-                  <>Next: <span className="text-gray-700">{nextHoliday.name}</span> · {formatDate(nextHoliday.startDate)}</>
-                )}
-              </p>
+              <ul className="space-y-1 max-h-40 overflow-y-auto">
+                {preview.holidays.map((h, i) => (
+                  <li key={i} className="flex items-center justify-between text-sm">
+                    <span className="text-gray-700">{h.name}</span>
+                    <span className="text-gray-400 ml-4 flex-shrink-0">{formatDate(h.startDate)}</span>
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
         </div>

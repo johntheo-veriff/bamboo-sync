@@ -1,5 +1,7 @@
-import { fetchWhosOut } from "@/modules/bamboo-hr-client";
+import { fetchCurrentEmployee, fetchWhosOut } from "@/modules/bamboo-hr-client";
 import { BambooAuthError } from "@/modules/bamboo-hr-client/types";
+import { db } from "@/lib/firebase-admin";
+import { createFirebaseGoogleIdentityStore } from "@/modules/google-identity-store/firebase-adapter";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
@@ -25,15 +27,31 @@ export async function POST(request: Request) {
   }
 
   try {
-    const entries = await fetchWhosOut({ subdomain, apiKey });
+    const identityStore = createFirebaseGoogleIdentityStore(db);
+    const identity = await identityStore.get(googleAccountId);
+    const userEmail = identity?.email ?? "";
 
-    const timeOffEntries = entries.filter((e) => e.type === "time-off");
+    const bambooConfig = { subdomain, apiKey };
+    const [entries, employee] = await Promise.all([
+      fetchWhosOut(bambooConfig),
+      userEmail ? fetchCurrentEmployee(bambooConfig, userEmail) : Promise.resolve(null),
+    ]);
+
     const holidays = entries.filter((e) => e.type === "holiday");
-    const nextHoliday = holidays.length > 0
-      ? { name: holidays[0].name, startDate: holidays[0].startDate }
-      : null;
+    const allTimeOff = entries.filter((e) => e.type === "time-off");
+    const timeOffEntries = employee
+      ? allTimeOff.filter((e) => e.name === employee.displayName)
+      : allTimeOff;
 
-    return NextResponse.json({ timeOffEntries, holidayCount: holidays.length, nextHoliday });
+    const holidayList = holidays.map((h) => ({ name: h.name, startDate: h.startDate }));
+    const nextHoliday = holidayList[0] ?? null;
+
+    return NextResponse.json({
+      timeOffEntries,
+      holidays: holidayList,
+      holidayCount: holidays.length,
+      nextHoliday,
+    });
   } catch (err) {
     if (err instanceof BambooAuthError) {
       return NextResponse.json({ error: "Invalid BambooHR API key or subdomain" }, { status: 401 });

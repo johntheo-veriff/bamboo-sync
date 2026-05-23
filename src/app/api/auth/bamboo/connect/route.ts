@@ -2,6 +2,7 @@ import { db } from "@/lib/firebase-admin";
 import { fetchWhosOut } from "@/modules/bamboo-hr-client";
 import { BambooAuthError } from "@/modules/bamboo-hr-client/types";
 import { createFirebaseConnectionStore } from "@/modules/connection-store/firebase-adapter";
+import { createFirebaseGoogleIdentityStore } from "@/modules/google-identity-store/firebase-adapter";
 import { runSync } from "@/modules/sync-runner";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
@@ -43,9 +44,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Could not reach BambooHR" }, { status: 502 });
   }
 
+  const identityStore = createFirebaseGoogleIdentityStore(db);
+  const identity = await identityStore.get(googleAccountId);
+  const userEmail = identity?.email ?? "";
+
   const store = createFirebaseConnectionStore(db);
   const connection = {
     googleAccountId,
+    userEmail,
     bambooSubdomain: subdomain,
     bambooApiKey: apiKey,
     googleAccessToken: tokens.accessToken,

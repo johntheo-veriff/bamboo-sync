@@ -2,6 +2,7 @@ export type SyncStatus = "ok" | "error" | "pending";
 
 export interface Connection {
   googleAccountId: string;
+  userEmail: string;
   bambooSubdomain: string;
   bambooApiKey: string;
   googleAccessToken: string;

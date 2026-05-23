@@ -6,6 +6,7 @@ const COLLECTION = "connections";
 function toConnection(id: string, data: FirebaseFirestore.DocumentData): Connection {
   return {
     googleAccountId: id,
+    userEmail: data.userEmail ?? "",
     bambooSubdomain: data.bambooSubdomain,
     bambooApiKey: data.bambooApiKey,
     googleAccessToken: data.googleAccessToken,
@@ -27,6 +28,7 @@ export function createFirebaseConnectionStore(db: Firestore): ConnectionStore {
 
     async save(connection) {
       await db.collection(COLLECTION).doc(connection.googleAccountId).set({
+        userEmail: connection.userEmail,
         bambooSubdomain: connection.bambooSubdomain,
         bambooApiKey: connection.bambooApiKey,
         googleAccessToken: connection.googleAccessToken,

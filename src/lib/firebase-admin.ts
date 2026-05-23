@@ -9,8 +9,8 @@ function initFirebaseAdmin(): App {
     return initializeApp({ credential: cert(JSON.parse(serviceAccount)) });
   }
 
-  // Fallback to application default credentials (Cloud Run, GCE, etc.)
-  return initializeApp();
+  // Fallback to application default credentials (Cloud Run, GCE, locally with gcloud ADC)
+  return initializeApp({ projectId: process.env.GOOGLE_CLOUD_PROJECT });
 }
 
 export const adminApp = initFirebaseAdmin();

@@ -1,4 +1,4 @@
-import { fetchWhosOut } from "@/modules/bamboo-hr-client";
+import { fetchCurrentEmployee, fetchWhosOut } from "@/modules/bamboo-hr-client";
 import {
   createEvent,
   deleteEvent,
@@ -30,10 +30,15 @@ export async function runSync(
   };
 
   try {
-    const [bambooEntries, existingEvents] = await Promise.all([
+    const [allEntries, employee, existingEvents] = await Promise.all([
       fetchWhosOut(bambooConfig),
+      connection.userEmail ? fetchCurrentEmployee(bambooConfig, connection.userEmail) : Promise.resolve(null),
       listBambooSyncEvents(googleConfig),
     ]);
+
+    const bambooEntries = employee
+      ? allEntries.filter((e) => e.type === "holiday" || e.name === employee.displayName)
+      : allEntries;
 
     const diff = computeSyncDiff(bambooEntries, existingEvents);
 
