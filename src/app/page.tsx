@@ -1,116 +1,62 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 
 const ERROR_MESSAGES: Record<string, string> = {
-  session_expired: "Session expired. Please start again.",
-  google_cancelled: "Google sign-in was cancelled. Please try again.",
-  connection_failed: "Something went wrong connecting your accounts. Please try again.",
+  session_expired: "Session expired. Please sign in again.",
+  google_cancelled: "Google sign-in was cancelled.",
+  connection_failed: "Something went wrong. Please try again.",
 };
 
-function OnboardingForm() {
-  const router = useRouter();
+function LandingPage() {
   const searchParams = useSearchParams();
   const urlError = searchParams.get("error");
-
-  const [subdomain, setSubdomain] = useState(searchParams.get("subdomain") ?? "");
-  const [apiKey, setApiKey] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(
-    urlError ? (ERROR_MESSAGES[urlError] ?? "An error occurred.") : null
-  );
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-
-    const res = await fetch("/api/auth/bamboo/validate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ subdomain, apiKey }),
-    });
-
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      setError((data as { error?: string }).error ?? "Validation failed. Check your credentials.");
-      setLoading(false);
-      return;
-    }
-
-    // Credentials validated — proceed to Google OAuth
-    router.push("/api/auth/google");
-  }
+  const error = urlError ? (ERROR_MESSAGES[urlError] ?? "An error occurred.") : null;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-1">bamboo-sync</h1>
-        <p className="text-gray-500 text-sm mb-8">
-          Connect your BambooHR calendar to Google Calendar so colleagues always know when you&apos;re away.
-        </p>
+      <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+        <div className="mb-8">
+          <h1 className="text-2xl font-semibold text-gray-900 mb-2">Bamboo Sync</h1>
+          <p className="text-gray-500 text-sm leading-relaxed">
+            Keeps your Google Calendar updated automatically whenever colleagues take time off in BambooHR.
+          </p>
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              BambooHR subdomain
-            </label>
-            <div className="flex rounded-lg border border-gray-300 overflow-hidden focus-within:ring-2 focus-within:ring-green-500 focus-within:border-transparent">
-              <input
-                type="text"
-                value={subdomain}
-                onChange={(e) => setSubdomain(e.target.value)}
-                placeholder="yourcompany"
-                required
-                className="flex-1 px-3 py-2 text-sm outline-none"
-              />
-              <span className="bg-gray-50 px-3 py-2 text-sm text-gray-400 border-l border-gray-300">
-                .bamboohr.com
-              </span>
-            </div>
+        {error && (
+          <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+            {error}
           </div>
+        )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              BambooHR API key
-            </label>
-            <input
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="Your personal API key"
-              required
-              className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            />
-            <p className="mt-1 text-xs text-gray-400">
-              Generate one in BambooHR → your profile → API Keys.
-            </p>
-          </div>
-
-          {error && (
-            <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-              {error}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-2.5 px-4 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white text-sm font-medium rounded-lg transition-colors"
-          >
-            {loading ? "Validating…" : "Connect BambooHR"}
-          </button>
-        </form>
+        <a
+          href="/api/auth/google"
+          className="flex items-center justify-center gap-3 w-full py-2.5 px-4 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg transition-colors shadow-sm"
+        >
+          <GoogleIcon />
+          Sign in with Google
+        </a>
       </div>
     </div>
+  );
+}
+
+function GoogleIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+      <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908C16.658 14.13 17.64 11.82 17.64 9.2Z" />
+      <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18Z" />
+      <path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332Z" />
+      <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58Z" />
+    </svg>
   );
 }
 
 export default function Home() {
   return (
     <Suspense>
-      <OnboardingForm />
+      <LandingPage />
     </Suspense>
   );
 }

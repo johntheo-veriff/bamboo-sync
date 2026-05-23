@@ -48,7 +48,10 @@ export default async function ManagementPage() {
   const store = createFirebaseConnectionStore(db);
   const connection = await store.get(googleAccountId);
 
-  // Generate and set CSRF token for mutation endpoints
+  if (!connection) {
+    redirect("/connect");
+  }
+
   const csrfToken = generateCsrfToken();
   cookieStore.set("csrf-token", csrfToken, {
     httpOnly: false,
@@ -57,31 +60,30 @@ export default async function ManagementPage() {
     path: "/",
   });
 
-  if (!connection) {
-    redirect("/");
-  }
-
   const isError = connection.lastSyncStatus === "error";
+  const isPending = connection.lastSyncStatus === "pending";
   const nextSyncLabel = formatNextSync(connection.nextSyncAt);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-gray-200 p-8 space-y-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900 mb-1">bamboo-sync</h1>
-          <p className="text-gray-500 text-sm">
-            {connection.bambooSubdomain}.bamboohr.com
-          </p>
-        </div>
+      <div className="w-full max-w-md space-y-4">
 
-        {/* Sync status */}
-        <div className="space-y-2">
-          <p className="text-sm font-medium text-gray-700">Sync status</p>
-          <div className="flex items-center gap-2">
-            {isError ? (
+        {/* Header card */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+          <div className="flex items-start justify-between mb-6">
+            <div>
+              <h1 className="text-2xl font-semibold text-gray-900">Bamboo Sync</h1>
+              <p className="text-gray-400 text-sm mt-0.5">{connection.bambooSubdomain}.bamboohr.com</p>
+            </div>
+            {isPending ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
+                <span className="w-1.5 h-1.5 rounded-full bg-yellow-500" />
+                Syncing…
+              </span>
+            ) : isError ? (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
                 <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                Sync failed
+                Error
               </span>
             ) : (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
@@ -90,37 +92,37 @@ export default async function ManagementPage() {
               </span>
             )}
           </div>
+
           {isError && connection.lastSyncError && (
-            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+            <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
               {connection.lastSyncError}
-            </p>
+            </div>
           )}
+
+          <div className="text-sm text-gray-500">
+            <span className="text-gray-400">Next sync</span>
+            <span className="ml-2 text-gray-700">{nextSyncLabel}</span>
+          </div>
         </div>
 
-        {/* Next sync */}
-        <div>
-          <p className="text-sm font-medium text-gray-700 mb-0.5">Next sync</p>
-          <p className="text-sm text-gray-500">{nextSyncLabel}</p>
+        {/* Settings card */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 space-y-6">
+          <div>
+            <p className="text-sm font-medium text-gray-700 mb-3">Update API key</p>
+            <UpdateApiKeyForm csrfToken={csrfToken} />
+          </div>
+
+          <hr className="border-gray-100" />
+
+          <div>
+            <p className="text-sm font-medium text-gray-700 mb-1">Disconnect</p>
+            <p className="text-sm text-gray-400 mb-3">
+              Removes all bamboo-sync calendar events and unlinks your account.
+            </p>
+            <DisconnectButton csrfToken={csrfToken} />
+          </div>
         </div>
 
-        <hr className="border-gray-100" />
-
-        {/* Update API Key */}
-        <div>
-          <p className="text-sm font-medium text-gray-700 mb-3">Update API key</p>
-          <UpdateApiKeyForm csrfToken={csrfToken} />
-        </div>
-
-        <hr className="border-gray-100" />
-
-        {/* Disconnect */}
-        <div>
-          <p className="text-sm font-medium text-gray-700 mb-3">Disconnect</p>
-          <p className="text-sm text-gray-500 mb-3">
-            This will remove all bamboo-sync calendar events and unlink your account.
-          </p>
-          <DisconnectButton csrfToken={csrfToken} />
-        </div>
       </div>
     </div>
   );

@@ -1,7 +1,6 @@
 import { db } from "@/lib/firebase-admin";
 import { exchangeGoogleCode, getGoogleUserInfo } from "@/lib/google-oauth";
 import { createFirebaseConnectionStore } from "@/modules/connection-store/firebase-adapter";
-import { runSync } from "@/modules/sync-runner";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -10,59 +9,46 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code");
   const error = searchParams.get("error");
 
+  const appUrl = process.env.APP_URL ?? new URL(request.url).origin;
+
   if (error || !code) {
-    return NextResponse.redirect(new URL("/?error=google_cancelled", request.url));
-  }
-
-  const cookieStore = await cookies();
-  const bambooRaw = cookieStore.get("bamboo-credentials")?.value;
-
-  if (!bambooRaw) {
-    return NextResponse.redirect(new URL("/?error=session_expired", request.url));
-  }
-
-  let bambooCredentials: { subdomain: string; apiKey: string };
-  try {
-    bambooCredentials = JSON.parse(bambooRaw);
-  } catch {
-    return NextResponse.redirect(new URL("/?error=session_expired", request.url));
+    return NextResponse.redirect(`${appUrl}/?error=google_cancelled`);
   }
 
   try {
-    const redirectUri = new URL("/api/auth/google/callback", request.url).toString();
+    const redirectUri = `${appUrl}/api/auth/google/callback`;
     const { accessToken, refreshToken } = await exchangeGoogleCode(code, redirectUri);
     const { sub: googleAccountId } = await getGoogleUserInfo(accessToken);
 
-    const store = createFirebaseConnectionStore(db);
-    const connection = {
-      googleAccountId,
-      bambooSubdomain: bambooCredentials.subdomain,
-      bambooApiKey: bambooCredentials.apiKey,
-      googleAccessToken: accessToken,
-      googleRefreshToken: refreshToken,
-      lastSyncStatus: "pending" as const,
-      lastSyncError: null,
-      nextSyncAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      createdAt: new Date(),
-    };
+    const cookieStore = await cookies();
 
-    await store.save(connection);
-
-    // Trigger initial sync in the background — don't await it
-    runSync(connection, store).catch(console.error);
-
-    // Clear bamboo credentials, set account cookie for Management Page
-    cookieStore.delete("bamboo-credentials");
     cookieStore.set("google-account-id", googleAccountId, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
     });
+
+    // Check if this account already has a connection
+    const store = createFirebaseConnectionStore(db);
+    const existing = await store.get(googleAccountId);
+
+    if (existing) {
+      return NextResponse.redirect(`${appUrl}/management`);
+    }
+
+    // Store tokens temporarily so /connect can save them with the BambooHR credentials
+    cookieStore.set("google-tokens", JSON.stringify({ accessToken, refreshToken }), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 60 * 10, // 10 minutes — enough time to fill the BambooHR form
+      path: "/",
+    });
+
+    return NextResponse.redirect(`${appUrl}/connect`);
   } catch (err) {
     console.error("OAuth callback error:", err);
-    return NextResponse.redirect(new URL("/?error=connection_failed", request.url));
+    return NextResponse.redirect(`${appUrl}/?error=connection_failed`);
   }
-
-  return NextResponse.redirect(new URL("/management", request.url));
 }
