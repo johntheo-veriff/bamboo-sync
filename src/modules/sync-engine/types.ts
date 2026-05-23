@@ -20,14 +20,12 @@ export interface ExistingCalendarEvent {
 export interface CreateOperation {
   action: "create";
   entry: BambooEntry;
-  colorId: string;
 }
 
 export interface UpdateOperation {
   action: "update";
   googleEventId: string;
   entry: BambooEntry;
-  colorId: string;
 }
 
 export interface DeleteOperation {

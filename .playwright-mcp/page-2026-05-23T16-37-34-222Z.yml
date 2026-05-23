@@ -1,0 +1,16 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - img "Veriff" [ref=e6]
+        - generic [ref=e9]: Veriff
+      - heading "BambooHR Sync" [level=1] [ref=e10]
+      - paragraph [ref=e11]: Automatically syncs your time-off and company holidays from BambooHR into your Google Calendar.
+    - link "Sign in with Google" [ref=e12] [cursor=pointer]:
+      - /url: /api/auth/google
+      - img [ref=e13]
+      - text: Sign in with Google
+    - paragraph [ref=e18]: Veriff accounts only
+  - button "Open Next.js Dev Tools" [ref=e24] [cursor=pointer]:
+    - img [ref=e25]
+  - alert [ref=e28]

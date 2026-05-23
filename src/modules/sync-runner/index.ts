@@ -50,7 +50,6 @@ export async function runSync(
           name: op.entry.name,
           startDate: op.entry.startDate,
           endDate: op.entry.endDate,
-          colorId: op.colorId,
         })
       ),
       ...diff.update.map((op) =>
@@ -60,7 +59,6 @@ export async function runSync(
           name: op.entry.name,
           startDate: op.entry.startDate,
           endDate: op.entry.endDate,
-          colorId: op.colorId,
         })
       ),
       ...diff.delete.map((op) => deleteEvent(googleConfig, op.googleEventId)),

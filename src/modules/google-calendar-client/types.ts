@@ -24,7 +24,6 @@ export interface CalendarEventInput {
   name: string;
   startDate: string; // ISO date
   endDate: string;
-  colorId: string;
 }
 
 export interface ExistingCalendarEvent {

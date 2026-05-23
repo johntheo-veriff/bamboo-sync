@@ -22,6 +22,7 @@ import {
 
 const mockConnection: Connection = {
   googleAccountId: "user-123",
+  userEmail: "",
   bambooSubdomain: "acme",
   bambooApiKey: "key-abc",
   googleAccessToken: "gtoken",

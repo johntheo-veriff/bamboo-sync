@@ -26,7 +26,7 @@ function buildEventBody(event: CalendarEventInput): object {
     summary: event.name,
     start: { date: event.startDate },
     end: { date: exclusiveEndDate(event.endDate) },
-    colorId: event.colorId,
+    eventType: "outOfOffice",
     extendedProperties: {
       private: {
         bambooId: event.bambooId,

@@ -1,4 +1,3 @@
-import { colorFor } from "./colors";
 import {
   BambooEntry,
   ExistingCalendarEvent,
@@ -7,8 +6,7 @@ import {
 
 export function computeSyncDiff(
   bambooEntries: BambooEntry[],
-  existingEvents: ExistingCalendarEvent[],
-  unavailableColors: Set<string> = new Set()
+  existingEvents: ExistingCalendarEvent[]
 ): SyncDiff {
   const diff: SyncDiff = { create: [], update: [], delete: [] };
 
@@ -17,16 +15,15 @@ export function computeSyncDiff(
 
   for (const entry of bambooEntries) {
     const existing = eventsByBambooId.get(entry.id);
-    const colorId = colorFor(entry.type, unavailableColors);
 
     if (!existing) {
-      diff.create.push({ action: "create", entry, colorId });
+      diff.create.push({ action: "create", entry });
     } else if (
       existing.name !== entry.name ||
       existing.startDate !== entry.startDate ||
       existing.endDate !== entry.endDate
     ) {
-      diff.update.push({ action: "update", googleEventId: existing.googleEventId, entry, colorId });
+      diff.update.push({ action: "update", googleEventId: existing.googleEventId, entry });
     }
   }
 

@@ -49,6 +49,7 @@ import { onSchedule } from "firebase-functions/v2/scheduler";
 function makeConnection(id: string): Connection {
   return {
     googleAccountId: id,
+    userEmail: "",
     bambooSubdomain: "acme",
     bambooApiKey: "key-abc",
     googleAccessToken: "gtoken",

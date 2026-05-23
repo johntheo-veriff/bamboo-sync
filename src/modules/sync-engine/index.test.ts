@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
 import { computeSyncDiff } from "./index";
-import { COLOR_FALLBACK, COLOR_HOLIDAY, COLOR_TIME_OFF } from "./colors";
 import { BambooEntry, ExistingCalendarEvent } from "./types";
 
 const timeOff = (id: string, overrides: Partial<BambooEntry> = {}): BambooEntry => ({
@@ -106,25 +105,4 @@ describe("computeSyncDiff", () => {
     expect(diff.create).toHaveLength(1);
   });
 
-  it("assigns time-off colour to Time-off Entry events", () => {
-    const diff = computeSyncDiff([timeOff("1")], []);
-    expect(diff.create[0].colorId).toBe(COLOR_TIME_OFF);
-  });
-
-  it("assigns holiday colour to Holiday events", () => {
-    const diff = computeSyncDiff([holiday("1")], []);
-    expect(diff.create[0].colorId).toBe(COLOR_HOLIDAY);
-  });
-
-  it("falls back to shared colour when preferred colour is unavailable", () => {
-    const unavailable = new Set([COLOR_TIME_OFF]);
-    const diff = computeSyncDiff([timeOff("1")], [], unavailable);
-    expect(diff.create[0].colorId).toBe(COLOR_FALLBACK);
-  });
-
-  it("falls back for holiday colour when unavailable", () => {
-    const unavailable = new Set([COLOR_HOLIDAY]);
-    const diff = computeSyncDiff([holiday("1")], [], unavailable);
-    expect(diff.create[0].colorId).toBe(COLOR_FALLBACK);
-  });
 });

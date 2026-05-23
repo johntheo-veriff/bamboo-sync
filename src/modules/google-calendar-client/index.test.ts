@@ -26,7 +26,6 @@ function makeEvent(overrides: Partial<CalendarEventInput> = {}): CalendarEventIn
     name: "Annual Leave",
     startDate: "2025-07-01",
     endDate: "2025-07-05",
-    colorId: "10",
     ...overrides,
   };
 }
@@ -73,8 +72,8 @@ describe("createEvent", () => {
     const body = JSON.parse(options.body as string);
     expect(body.summary).toBe("Annual Leave");
     expect(body.start).toEqual({ date: "2025-07-01" });
-    expect(body.end).toEqual({ date: "2025-07-05" });
-    expect(body.colorId).toBe("10");
+    expect(body.end).toEqual({ date: "2025-07-06" });
+    expect(body.eventType).toBe("outOfOffice");
   });
 
   it("stores bambooId and bambooType in extendedProperties", async () => {
