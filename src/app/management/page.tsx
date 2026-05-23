@@ -5,7 +5,7 @@ import { UserAvatar } from "@/components/UserAvatar";
 import { VeriffLogo } from "@/components/VeriffLogo";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { DisconnectButton } from "./actions";
+import { DisconnectButton, SyncNowButton } from "./actions";
 
 function formatNextSync(date: Date): string {
   const now = new Date();
@@ -105,13 +105,22 @@ export default async function ManagementPage() {
             </div>
           </div>
 
-          {/* Disconnect card */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-            <p className="text-sm font-medium text-[#1C2B2A] mb-1">Disconnect</p>
-            <p className="text-sm text-gray-400 mb-3">
-              Removes all synced calendar events and stops future syncs.
-            </p>
-            <DisconnectButton />
+          {/* Actions card */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 space-y-6">
+            <div>
+              <p className="text-sm font-medium text-[#1C2B2A] mb-1">Manual sync</p>
+              <p className="text-sm text-gray-400 mb-3">
+                Sync now instead of waiting for the next scheduled run.
+              </p>
+              <SyncNowButton />
+            </div>
+            <div className="border-t border-gray-100 pt-6">
+              <p className="text-sm font-medium text-[#1C2B2A] mb-1">Disconnect</p>
+              <p className="text-sm text-gray-400 mb-3">
+                Removes all synced calendar events and stops future syncs.
+              </p>
+              <DisconnectButton />
+            </div>
           </div>
 
         </div>

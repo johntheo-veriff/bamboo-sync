@@ -3,6 +3,46 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+export function SyncNowButton() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSync() {
+    setLoading(true);
+    setError(null);
+
+    const res = await fetch("/api/sync", { method: "POST" });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError((data as { error?: string }).error ?? "Sync failed.");
+      setLoading(false);
+      return;
+    }
+
+    router.refresh();
+    setLoading(false);
+  }
+
+  return (
+    <div className="space-y-2">
+      {error && (
+        <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+          {error}
+        </div>
+      )}
+      <button
+        onClick={handleSync}
+        disabled={loading}
+        className="py-2 px-4 bg-[#00E5CC] hover:bg-[#00CDB8] disabled:opacity-50 text-[#1C2B2A] text-sm font-medium rounded-lg transition-colors"
+      >
+        {loading ? "Syncing…" : "Sync now"}
+      </button>
+    </div>
+  );
+}
+
 export function UpdateApiKeyForm({ csrfToken }: { csrfToken: string }) {
   const [apiKey, setApiKey] = useState("");
   const [loading, setLoading] = useState(false);

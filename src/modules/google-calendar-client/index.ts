@@ -168,14 +168,28 @@ export async function deleteEvent(
 export async function listBambooSyncEvents(
   config: GoogleCalendarConfig
 ): Promise<ExistingCalendarEvent[]> {
-  const url = `${CALENDAR_API_BASE}?privateExtendedProperty=bambooId`;
-  const response = await fetchWithAuth(config, url, {
+  // Scan a 2-year window and filter in-memory by bambooId extended property.
+  // The Calendar API privateExtendedProperty filter requires key=value format and
+  // doesn't support existence-only checks, which causes 400 errors.
+  const oneYearAgo = new Date();
+  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+  const oneYearFromNow = new Date();
+  oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+
+  const params = new URLSearchParams({
+    timeMin: oneYearAgo.toISOString(),
+    timeMax: oneYearFromNow.toISOString(),
+    maxResults: "2500",
+    singleEvents: "true",
+  });
+
+  const response = await fetchWithAuth(config, `${CALENDAR_API_BASE}?${params}`, {
     method: "GET",
-    headers: { "Content-Type": "application/json" },
   });
 
   if (!response.ok) {
-    throw new GoogleNetworkError(`List events failed with status ${response.status}`);
+    const body = await response.text().catch(() => "");
+    throw new GoogleNetworkError(`List events failed with status ${response.status}: ${body}`);
   }
 
   const data = (await response.json()) as {
@@ -188,15 +202,17 @@ export async function listBambooSyncEvents(
     }>;
   };
 
-  return (data.items ?? []).map((item) => {
-    const exclusiveEnd = item.end?.date ?? "";
-    return {
-      googleEventId: item.id,
-      bambooId: item.extendedProperties?.private?.bambooId ?? "",
-      type: (item.extendedProperties?.private?.bambooType ?? "time-off") as "time-off" | "holiday",
-      name: item.summary ?? "",
-      startDate: item.start?.date ?? "",
-      endDate: exclusiveEnd ? inclusiveEndDate(exclusiveEnd) : "",
-    };
-  });
+  return (data.items ?? [])
+    .filter((item) => item.extendedProperties?.private?.bambooId)
+    .map((item) => {
+      const exclusiveEnd = item.end?.date ?? "";
+      return {
+        googleEventId: item.id,
+        bambooId: item.extendedProperties!.private!.bambooId!,
+        type: (item.extendedProperties?.private?.bambooType ?? "time-off") as "time-off" | "holiday",
+        name: item.summary ?? "",
+        startDate: item.start?.date ?? "",
+        endDate: exclusiveEnd ? inclusiveEndDate(exclusiveEnd) : "",
+      };
+    });
 }
