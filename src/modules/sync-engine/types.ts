@@ -1,3 +1,5 @@
+export type { ExistingCalendarEvent } from "@/modules/google-calendar-client/types";
+
 export type EntryType = "time-off" | "holiday";
 
 export interface BambooEntry {
@@ -5,15 +7,6 @@ export interface BambooEntry {
   type: EntryType;
   name: string;
   startDate: string; // ISO date string, e.g. "2025-06-01"
-  endDate: string;
-}
-
-export interface ExistingCalendarEvent {
-  googleEventId: string;
-  bambooId: string;
-  type: EntryType;
-  name: string;
-  startDate: string;
   endDate: string;
 }
 
