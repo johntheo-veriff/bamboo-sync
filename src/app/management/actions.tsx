@@ -1,7 +1,24 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
+
+const COMMON_TIMEZONES = [
+  "Africa/Cairo", "Africa/Johannesburg", "America/Anchorage", "America/Argentina/Buenos_Aires",
+  "America/Bogota", "America/Chicago", "America/Denver", "America/Los_Angeles",
+  "America/Mexico_City", "America/New_York", "America/Sao_Paulo", "America/Toronto",
+  "America/Vancouver", "Asia/Bangkok", "Asia/Colombo", "Asia/Dubai", "Asia/Hong_Kong",
+  "Asia/Jakarta", "Asia/Karachi", "Asia/Kolkata", "Asia/Kuala_Lumpur", "Asia/Manila",
+  "Asia/Seoul", "Asia/Shanghai", "Asia/Singapore", "Asia/Taipei", "Asia/Tehran",
+  "Asia/Tokyo", "Australia/Melbourne", "Australia/Perth", "Australia/Sydney",
+  "Europe/Amsterdam", "Europe/Athens", "Europe/Berlin", "Europe/Brussels",
+  "Europe/Budapest", "Europe/Copenhagen", "Europe/Dublin", "Europe/Helsinki",
+  "Europe/Istanbul", "Europe/Lisbon", "Europe/London", "Europe/Madrid",
+  "Europe/Moscow", "Europe/Oslo", "Europe/Paris", "Europe/Prague",
+  "Europe/Rome", "Europe/Stockholm", "Europe/Tallinn", "Europe/Vienna",
+  "Europe/Warsaw", "Europe/Zurich", "Pacific/Auckland", "Pacific/Honolulu",
+  "Pacific/Sydney", "UTC",
+];
 
 interface SyncedEvent {
   googleEventId: string;
@@ -44,12 +61,14 @@ export function SyncedEventsPanel({ lastSyncedAt }: { lastSyncedAt?: string }) {
   useEffect(() => { fetchEvents(); }, [fetchEvents]);
 
   useEffect(() => {
-    if (lastSyncedAt) setEvents(null);
-  }, [lastSyncedAt]);
+    if (lastSyncedAt) fetchEvents();
+  }, [lastSyncedAt, fetchEvents]);
 
   useEffect(() => {
-    if (events === null && !loading) fetchEvents();
-  }, [events, loading, fetchEvents]);
+    const handler = () => fetchEvents();
+    window.addEventListener("bamboo-events-changed", handler);
+    return () => window.removeEventListener("bamboo-events-changed", handler);
+  }, [fetchEvents]);
 
   const holidays = events?.filter((e) => e.type === "holiday") ?? [];
   const timeOff = events?.filter((e) => e.type === "time-off") ?? [];
@@ -124,6 +143,175 @@ export function SyncedEventsPanel({ lastSyncedAt }: { lastSyncedAt?: string }) {
   );
 }
 
+export function TimezoneSelector({ savedTimezone }: { savedTimezone?: string }) {
+  const router = useRouter();
+  const browserTz =
+    typeof window !== "undefined"
+      ? Intl.DateTimeFormat().resolvedOptions().timeZone
+      : undefined;
+
+  const [selected, setSelected] = useState(savedTimezone ?? browserTz ?? "UTC");
+  const [persisted, setPersisted] = useState(savedTimezone);
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  const allTimezones = useMemo<string[]>(() => {
+    try {
+      return (Intl as unknown as { supportedValuesOf: (k: string) => string[] }).supportedValuesOf("timeZone");
+    } catch {
+      return COMMON_TIMEZONES;
+    }
+  }, []);
+
+  const filtered = useMemo(() => {
+    if (!query) return allTimezones;
+    const q = query.toLowerCase();
+    return allTimezones.filter((tz) => tz.toLowerCase().includes(q));
+  }, [allTimezones, query]);
+
+  useEffect(() => {
+    function onPointerDown(e: PointerEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+        setQuery("");
+      }
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, []);
+
+  useEffect(() => {
+    if (open) setTimeout(() => searchRef.current?.focus(), 0);
+  }, [open]);
+
+  function handleSelect(tz: string) {
+    setSelected(tz);
+    setQuery("");
+    setOpen(false);
+    setSuccess(false);
+    setError(null);
+  }
+
+  async function handleSave() {
+    setLoading(true);
+    setSuccess(false);
+    setError(null);
+
+    // Clear existing events first so they get recreated with the new timezone.
+    // A plain sync would skip them (the diff sees no content change).
+    const clearRes = await fetch("/api/sync/events", { method: "DELETE" });
+    if (!clearRes.ok) {
+      setError("Failed to clear existing events.");
+      setLoading(false);
+      return;
+    }
+
+    const res = await fetch("/api/sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userTimezone: selected }),
+    });
+
+    setLoading(false);
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError((data as { error?: string }).error ?? "Failed to sync.");
+      return;
+    }
+
+    setPersisted(selected);
+    setSuccess(true);
+    router.refresh();
+    window.dispatchEvent(new Event("bamboo-events-changed"));
+  }
+
+  const isDirty = selected !== persisted;
+
+  return (
+    <div>
+      <div ref={containerRef} className="relative">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="w-full flex items-center justify-between px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white hover:border-gray-300 transition-colors text-left"
+        >
+          <span className="text-[#1C2B2A]">{selected}</span>
+          <svg
+            className={`w-4 h-4 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`}
+            fill="none" stroke="currentColor" viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        {open && (
+          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg flex flex-col">
+            <div className="p-2 border-b border-gray-100">
+              <input
+                ref={searchRef}
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search timezones…"
+                className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-[#00E5CC]"
+              />
+            </div>
+            <div className="max-h-52 overflow-y-auto">
+              {filtered.length === 0 ? (
+                <p className="px-3 py-3 text-sm text-gray-400">No results</p>
+              ) : (
+                filtered.map((tz) => (
+                  <button
+                    key={tz}
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => handleSelect(tz)}
+                    className={`w-full text-left px-3 py-2 text-sm transition-colors flex items-center justify-between gap-2 ${
+                      tz === selected
+                        ? "bg-[#F0FDFB] text-[#1C2B2A] font-medium"
+                        : "text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    <span>{tz}</span>
+                    {tz === browserTz && (
+                      <span className="text-xs text-gray-400 flex-shrink-0">browser default</span>
+                    )}
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {error && (
+        <div className="mt-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+          {error}
+        </div>
+      )}
+      {success && (
+        <div className="mt-2 text-sm text-[#00897B] bg-[#F0FDFB] border border-[#CCFAF5] rounded-lg px-3 py-2">
+          Timezone saved and calendar re-synced.
+        </div>
+      )}
+
+      <button
+        onClick={handleSave}
+        disabled={loading || !isDirty}
+        className="mt-3 py-2 px-4 bg-[#00E5CC] hover:bg-[#00CDB8] disabled:opacity-50 disabled:cursor-not-allowed text-[#1C2B2A] text-sm font-medium rounded-lg transition-colors"
+      >
+        {loading ? "Saving…" : "Save timezone"}
+      </button>
+    </div>
+  );
+}
+
 export function SyncNowButton() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -133,7 +321,11 @@ export function SyncNowButton() {
     setLoading(true);
     setError(null);
 
-    const res = await fetch("/api/sync", { method: "POST" });
+    const res = await fetch("/api/sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone }),
+    });
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
@@ -143,6 +335,7 @@ export function SyncNowButton() {
     }
 
     router.refresh();
+    window.dispatchEvent(new Event("bamboo-events-changed"));
     setLoading(false);
   }
 
@@ -187,6 +380,7 @@ export function ClearEventsButton() {
     setResult(`${data.deleted} event${data.deleted !== 1 ? "s" : ""} removed.`);
     setLoading(false);
     router.refresh();
+    window.dispatchEvent(new Event("bamboo-events-changed"));
   }
 
   return (
@@ -212,22 +406,21 @@ export function ClearEventsButton() {
   );
 }
 
-export function DisconnectButton() {
+export function DangerZone() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<"disconnect" | "disconnect-delete" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleDisconnect() {
-    setLoading(true);
+  async function handleDisconnect(deleteEvents: boolean) {
+    setLoading(deleteEvents ? "disconnect-delete" : "disconnect");
     setError(null);
 
-    const res = await fetch("/api/connection", {
-      method: "DELETE",
-    });
+    const url = deleteEvents ? "/api/connection?deleteEvents=true" : "/api/connection";
+    const res = await fetch(url, { method: "DELETE" });
 
     if (!res.ok) {
       setError("Failed to disconnect. Please try again.");
-      setLoading(false);
+      setLoading(null);
       return;
     }
 
@@ -235,19 +428,38 @@ export function DisconnectButton() {
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
       {error && (
         <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
           {error}
         </div>
       )}
-      <button
-        onClick={handleDisconnect}
-        disabled={loading}
-        className="py-2 px-4 bg-white hover:bg-red-50 disabled:opacity-50 text-red-600 text-sm font-medium rounded-lg border border-red-300 transition-colors"
-      >
-        {loading ? "Disconnecting…" : "Disconnect"}
-      </button>
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="text-sm font-medium text-[#1C2B2A]">Disconnect</p>
+          <p className="text-sm text-gray-400 mt-0.5">Stop syncing. Keeps existing calendar events.</p>
+        </div>
+        <button
+          onClick={() => handleDisconnect(false)}
+          disabled={loading !== null}
+          className="flex-shrink-0 py-2 px-4 bg-white hover:bg-red-50 disabled:opacity-50 text-red-600 text-sm font-medium rounded-lg border border-red-200 transition-colors"
+        >
+          {loading === "disconnect" ? "Disconnecting…" : "Disconnect"}
+        </button>
+      </div>
+      <div className="border-t border-red-50 pt-4 flex items-center justify-between gap-4">
+        <div>
+          <p className="text-sm font-medium text-[#1C2B2A]">Disconnect &amp; delete</p>
+          <p className="text-sm text-gray-400 mt-0.5">Stop syncing and remove all synced events.</p>
+        </div>
+        <button
+          onClick={() => handleDisconnect(true)}
+          disabled={loading !== null}
+          className="flex-shrink-0 py-2 px-4 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
+        >
+          {loading === "disconnect-delete" ? "Disconnecting…" : "Disconnect & delete"}
+        </button>
+      </div>
     </div>
   );
 }

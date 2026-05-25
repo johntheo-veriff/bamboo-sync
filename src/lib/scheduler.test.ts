@@ -68,6 +68,8 @@ function makeStore(connections: Connection[]): ConnectionStore {
     delete: vi.fn(),
     listAll: vi.fn().mockResolvedValue(connections),
     updateSyncResult: vi.fn(),
+    updateTokens: vi.fn(),
+    updateTimezone: vi.fn(),
   };
 }
 

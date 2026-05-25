@@ -3,7 +3,7 @@ import { runSync } from "@/modules/sync-runner";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-export async function POST() {
+export async function POST(request: Request) {
   const cookieStore = await cookies();
   const googleAccountId = cookieStore.get("google-account-id")?.value;
   const tokensRaw = cookieStore.get("google-tokens")?.value;
@@ -25,6 +25,9 @@ export async function POST() {
     return NextResponse.json({ error: "BambooHR not configured" }, { status: 500 });
   }
 
+  const body = await request.json().catch(() => ({})) as { userTimezone?: string };
+  const userTimezone = body.userTimezone || undefined;
+
   const { connectionStore, identityStore } = getStores();
   const identity = await identityStore.get(googleAccountId);
   const userEmail = identity?.email ?? "";
@@ -40,6 +43,7 @@ export async function POST() {
     lastSyncError: null,
     nextSyncAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
     createdAt: new Date(),
+    userTimezone,
   };
 
   await connectionStore.save(connection);

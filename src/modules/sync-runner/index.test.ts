@@ -41,6 +41,8 @@ function makeStore(overrides: Partial<ConnectionStore> = {}): ConnectionStore {
     delete: vi.fn(),
     listAll: vi.fn(),
     updateSyncResult: vi.fn(),
+    updateTokens: vi.fn(),
+    updateTimezone: vi.fn(),
     ...overrides,
   };
 }

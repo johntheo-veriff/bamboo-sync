@@ -47,9 +47,21 @@ function buildEventBody(event: CalendarEventInput): object {
   };
 }
 
-async function refreshAccessToken(
-  config: GoogleCalendarConfig
-): Promise<string> {
+// One in-flight refresh per config object — prevents concurrent 401s from
+// each spawning an independent token request (race condition, wasted calls,
+// and breakage when Google rotates the refresh token on first use).
+const pendingRefreshes = new WeakMap<GoogleCalendarConfig, Promise<string>>();
+
+async function refreshAccessToken(config: GoogleCalendarConfig): Promise<string> {
+  const existing = pendingRefreshes.get(config);
+  if (existing) return existing;
+
+  const promise = doRefresh(config).finally(() => pendingRefreshes.delete(config));
+  pendingRefreshes.set(config, promise);
+  return promise;
+}
+
+async function doRefresh(config: GoogleCalendarConfig): Promise<string> {
   const body = new URLSearchParams({
     grant_type: "refresh_token",
     refresh_token: config.refreshToken,
@@ -76,10 +88,12 @@ async function refreshAccessToken(
   const newAccessToken = data.access_token;
   const newRefreshToken = data.refresh_token ?? config.refreshToken;
 
-  await config.onTokenRefresh({
-    accessToken: newAccessToken,
-    refreshToken: newRefreshToken,
-  });
+  // Update config in-place so all subsequent requests in this sync use the
+  // new token without needing another 401 round-trip.
+  config.accessToken = newAccessToken;
+  config.refreshToken = newRefreshToken;
+
+  await config.onTokenRefresh({ accessToken: newAccessToken, refreshToken: newRefreshToken });
 
   return newAccessToken;
 }

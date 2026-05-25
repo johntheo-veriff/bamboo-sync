@@ -61,7 +61,11 @@ export default function ConnectForm() {
     setStep("connecting");
     setError(null);
 
-    const res = await fetch("/api/auth/bamboo/connect", { method: "POST" });
+    const res = await fetch("/api/auth/bamboo/connect", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone }),
+    });
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));

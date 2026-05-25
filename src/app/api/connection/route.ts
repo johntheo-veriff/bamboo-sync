@@ -46,14 +46,16 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "Connection not found" }, { status: 404 });
   }
 
-  // Best-effort: delete all bamboo-sync calendar events.
-  // Even if this fails, we still remove the connection so the user is unblocked.
-  try {
-    const calendarConfig = buildGoogleCalendarConfig(connection, connectionStore);
-    const events = await listBambooSyncEvents(calendarConfig);
-    await Promise.all(events.map((event) => deleteEvent(calendarConfig, event.googleEventId)));
-  } catch (err) {
-    console.error("Failed to delete calendar events during disconnect:", err);
+  const deleteEvents = new URL(request.url).searchParams.get("deleteEvents") === "true";
+
+  if (deleteEvents) {
+    try {
+      const calendarConfig = buildGoogleCalendarConfig(connection, connectionStore);
+      const events = await listBambooSyncEvents(calendarConfig);
+      await Promise.all(events.map((event) => deleteEvent(calendarConfig, event.googleEventId)));
+    } catch (err) {
+      console.error("Failed to delete calendar events during disconnect:", err);
+    }
   }
 
   await connectionStore.delete(googleAccountId);

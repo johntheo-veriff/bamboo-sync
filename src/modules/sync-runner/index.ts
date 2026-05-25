@@ -41,9 +41,8 @@ export async function runSync(
       getUserCalendarTimezone(googleConfig),
     ]);
 
-    // Prefer BambooHR employee timezone (reflects actual location set by HR)
-    // over Google Calendar settings timezone (may be set to company HQ timezone)
-    const timeZone = employee?.timeZone ?? googleTimezone;
+    // Timezone priority: BambooHR profile → browser-captured → Google Calendar settings
+    const timeZone = employee?.timeZone ?? connection.userTimezone ?? googleTimezone;
 
     const filtered = employee
       ? allEntries.filter((e) => e.type === "holiday" || e.name === employee.displayName)

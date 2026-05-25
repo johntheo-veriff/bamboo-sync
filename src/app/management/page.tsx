@@ -3,7 +3,7 @@ import { UserAvatar } from "@/components/UserAvatar";
 import { VeriffLogo } from "@/components/VeriffLogo";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { ClearEventsButton, DisconnectButton, SyncNowButton, SyncedEventsPanel } from "./actions";
+import { ClearEventsButton, DangerZone, SyncNowButton, SyncedEventsPanel, TimezoneSelector } from "./actions";
 
 function formatNextSync(date: Date): string {
   const now = new Date();
@@ -104,31 +104,39 @@ export default async function ManagementPage() {
             </div>
           </div>
 
-          <SyncedEventsPanel />
-
-          {/* Actions card */}
+          {/* Settings card */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 space-y-6">
             <div>
+              <p className="text-sm font-medium text-[#1C2B2A] mb-1">Calendar timezone</p>
+              <p className="text-sm text-gray-400 mb-3">
+                Events are created at midnight–midnight in this timezone so they appear as all-day in your calendar.
+              </p>
+              <TimezoneSelector savedTimezone={connection.userTimezone} />
+            </div>
+            <div className="border-t border-gray-100 pt-6">
               <p className="text-sm font-medium text-[#1C2B2A] mb-1">Manual sync</p>
               <p className="text-sm text-gray-400 mb-3">
                 Sync now instead of waiting for the next scheduled run.
               </p>
               <SyncNowButton />
             </div>
-            <div className="border-t border-gray-100 pt-6">
-              <p className="text-sm font-medium text-[#1C2B2A] mb-1">Clear events</p>
-              <p className="text-sm text-gray-400 mb-3">
-                Removes all synced calendar events. The next sync will recreate them.
-              </p>
-              <ClearEventsButton />
-            </div>
-            <div className="border-t border-gray-100 pt-6">
-              <p className="text-sm font-medium text-[#1C2B2A] mb-1">Disconnect</p>
-              <p className="text-sm text-gray-400 mb-3">
-                Removes all synced calendar events and stops future syncs.
-              </p>
-              <DisconnectButton />
-            </div>
+          </div>
+
+          <SyncedEventsPanel />
+
+          {/* Clear events card */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+            <p className="text-sm font-medium text-[#1C2B2A] mb-1">Clear events</p>
+            <p className="text-sm text-gray-400 mb-3">
+              Removes all synced calendar events. The next sync will recreate them.
+            </p>
+            <ClearEventsButton />
+          </div>
+
+          {/* Danger zone */}
+          <div className="bg-white rounded-2xl shadow-sm border border-red-100 p-8">
+            <p className="text-xs font-semibold text-red-400 uppercase tracking-wide mb-4">Danger zone</p>
+            <DangerZone />
           </div>
 
         </div>

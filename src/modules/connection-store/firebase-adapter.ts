@@ -15,6 +15,7 @@ function toConnection(id: string, data: FirebaseFirestore.DocumentData): Connect
     lastSyncError: data.lastSyncError ?? null,
     nextSyncAt: (data.nextSyncAt as Timestamp).toDate(),
     createdAt: (data.createdAt as Timestamp).toDate(),
+    userTimezone: data.userTimezone ?? undefined,
   };
 }
 
@@ -37,6 +38,7 @@ export function createFirebaseConnectionStore(db: Firestore): ConnectionStore {
         lastSyncError: connection.lastSyncError,
         nextSyncAt: Timestamp.fromDate(connection.nextSyncAt),
         createdAt: Timestamp.fromDate(connection.createdAt),
+        ...(connection.userTimezone ? { userTimezone: connection.userTimezone } : {}),
       });
     },
 
@@ -62,6 +64,10 @@ export function createFirebaseConnectionStore(db: Firestore): ConnectionStore {
         googleAccessToken: tokens.accessToken,
         googleRefreshToken: tokens.refreshToken,
       });
+    },
+
+    async updateTimezone(googleAccountId, userTimezone) {
+      await db.collection(COLLECTION).doc(googleAccountId).update({ userTimezone });
     },
   };
 }

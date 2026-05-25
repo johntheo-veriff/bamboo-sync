@@ -11,6 +11,7 @@ export interface Connection {
   lastSyncError: string | null;
   nextSyncAt: Date;
   createdAt: Date;
+  userTimezone?: string; // IANA timezone from user's browser, captured at connect/sync time
 }
 
 export interface ConnectionStore {
@@ -26,4 +27,5 @@ export interface ConnectionStore {
     googleAccountId: string,
     tokens: { accessToken: string; refreshToken: string }
   ): Promise<void>;
+  updateTimezone(googleAccountId: string, userTimezone: string): Promise<void>;
 }
