@@ -34,12 +34,16 @@ export async function runSync(
   const googleConfig = buildGoogleCalendarConfig(connection, store);
 
   try {
-    const [allEntries, employee, existingEvents, timeZone] = await Promise.all([
+    const [allEntries, employee, existingEvents, googleTimezone] = await Promise.all([
       fetchWhosOut(bambooConfig),
       connection.userEmail ? fetchCurrentEmployee(bambooConfig, connection.userEmail) : Promise.resolve(null),
       listBambooSyncEvents(googleConfig),
       getUserCalendarTimezone(googleConfig),
     ]);
+
+    // Prefer BambooHR employee timezone (reflects actual location set by HR)
+    // over Google Calendar settings timezone (may be set to company HQ timezone)
+    const timeZone = employee?.timeZone ?? googleTimezone;
 
     const filtered = employee
       ? allEntries.filter((e) => e.type === "holiday" || e.name === employee.displayName)

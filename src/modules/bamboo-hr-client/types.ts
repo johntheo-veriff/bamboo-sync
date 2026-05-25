@@ -29,4 +29,5 @@ export interface EmployeeInfo {
   id: string;
   displayName: string;
   workEmail: string;
+  timeZone?: string; // IANA timezone from BambooHR employee profile, if set
 }

@@ -73,7 +73,18 @@ export async function fetchCurrentEmployee(
     (e) => e.workEmail?.toLowerCase() === email.toLowerCase()
   );
   if (!match) return null;
-  return { id: String(match.id), displayName: match.displayName, workEmail: match.workEmail };
+
+  // Fetch the employee's timezone from BambooHR profile fields
+  let timeZone: string | undefined;
+  try {
+    const fieldsUrl = `${baseUrl(config.subdomain)}/employees/${match.id}?fields=timeZone`;
+    const fields = (await bambooFetch(fieldsUrl, config)) as { timeZone?: string };
+    timeZone = fields.timeZone || undefined;
+  } catch {
+    // non-critical: sync continues without timezone
+  }
+
+  return { id: String(match.id), displayName: match.displayName, workEmail: match.workEmail, timeZone };
 }
 
 export async function validateCredentials(config: BambooHRConfig): Promise<void> {
