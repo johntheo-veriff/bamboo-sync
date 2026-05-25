@@ -73,8 +73,8 @@ describe("createEvent", () => {
     expect(body.summary).toBe("Annual Leave");
     expect(body.start).toEqual({ date: "2025-07-01" });
     expect(body.end).toEqual({ date: "2025-07-06" });
+    expect(body.eventType).toBe("outOfOffice");
     expect(body.transparency).toBe("opaque");
-    expect(body.eventType).toBeUndefined();
   });
 
   it("stores bambooId and bambooType in extendedProperties", async () => {

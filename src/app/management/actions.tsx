@@ -167,6 +167,54 @@ export function SyncNowButton() {
   );
 }
 
+export function ClearEventsButton() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleClear() {
+    setLoading(true);
+    setResult(null);
+    setError(null);
+
+    const res = await fetch("/api/sync/events", { method: "DELETE" });
+
+    if (!res.ok) {
+      setError("Failed to clear events. Please try again.");
+      setLoading(false);
+      return;
+    }
+
+    const data = (await res.json()) as { deleted: number };
+    setResult(`${data.deleted} event${data.deleted !== 1 ? "s" : ""} removed.`);
+    setLoading(false);
+    router.refresh();
+  }
+
+  return (
+    <div className="space-y-2">
+      {error && (
+        <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+          {error}
+        </div>
+      )}
+      {result && (
+        <div className="text-sm text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+          {result}
+        </div>
+      )}
+      <button
+        onClick={handleClear}
+        disabled={loading}
+        className="py-2 px-4 bg-white hover:bg-gray-50 disabled:opacity-50 text-gray-600 text-sm font-medium rounded-lg border border-gray-300 transition-colors"
+      >
+        {loading ? "Clearing…" : "Clear synced events"}
+      </button>
+    </div>
+  );
+}
+
 export function DisconnectButton() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);

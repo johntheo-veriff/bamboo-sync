@@ -3,7 +3,7 @@ import { UserAvatar } from "@/components/UserAvatar";
 import { VeriffLogo } from "@/components/VeriffLogo";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { DisconnectButton, SyncNowButton, SyncedEventsPanel } from "./actions";
+import { ClearEventsButton, DisconnectButton, SyncNowButton, SyncedEventsPanel } from "./actions";
 
 function formatNextSync(date: Date): string {
   const now = new Date();
@@ -114,6 +114,13 @@ export default async function ManagementPage() {
                 Sync now instead of waiting for the next scheduled run.
               </p>
               <SyncNowButton />
+            </div>
+            <div className="border-t border-gray-100 pt-6">
+              <p className="text-sm font-medium text-[#1C2B2A] mb-1">Clear events</p>
+              <p className="text-sm text-gray-400 mb-3">
+                Removes all synced calendar events. The next sync will recreate them.
+              </p>
+              <ClearEventsButton />
             </div>
             <div className="border-t border-gray-100 pt-6">
               <p className="text-sm font-medium text-[#1C2B2A] mb-1">Disconnect</p>
