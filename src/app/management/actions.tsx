@@ -27,6 +27,7 @@ interface SyncedEvent {
   name: string;
   startDate: string;
   endDate: string;
+  htmlLink?: string;
 }
 
 function formatDateRange(start: string, end: string): string {
@@ -35,6 +36,44 @@ function formatDateRange(start: string, end: string): string {
   const fmt = (d: Date) =>
     d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
   return start === end ? fmt(s) : `${fmt(s)} – ${fmt(e)}`;
+}
+
+function EventRow({ event }: { event: SyncedEvent }) {
+  const dateLabel = formatDateRange(event.startDate, event.endDate);
+  const inner = (
+    <>
+      <span className="truncate">{event.name}</span>
+      <span className="text-gray-400 tabular-nums flex-shrink-0 flex items-center gap-1.5">
+        {dateLabel}
+        {event.htmlLink && (
+          <svg className="w-3 h-3 opacity-0 group-hover:opacity-50 transition-opacity flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          </svg>
+        )}
+      </span>
+    </>
+  );
+
+  if (event.htmlLink) {
+    return (
+      <li>
+        <a
+          href={event.htmlLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group flex items-center justify-between gap-4 text-sm text-[#1C2B2A] hover:text-[#00897B] rounded-lg px-2 py-1.5 -mx-2 hover:bg-[#F0FDFB] transition-colors"
+        >
+          {inner}
+        </a>
+      </li>
+    );
+  }
+
+  return (
+    <li className="flex items-center justify-between gap-4 text-sm text-[#1C2B2A] px-2 py-1.5">
+      {inner}
+    </li>
+  );
 }
 
 export function SyncedEventsPanel({ lastSyncedAt }: { lastSyncedAt?: string }) {
@@ -94,49 +133,41 @@ export function SyncedEventsPanel({ lastSyncedAt }: { lastSyncedAt?: string }) {
 
       {error && <p className="text-sm text-red-500 py-2">{error}</p>}
 
-      {events !== null && !loading && total === 0 && (
-        <p className="text-sm text-gray-400 py-2">No events synced yet.</p>
-      )}
+      {events !== null && !loading && (
+        <div ref={listRef} className="overflow-y-auto max-h-72 -mx-8 px-8">
 
-      {events !== null && !loading && total > 0 && (
-        <div
-          ref={listRef}
-          className="overflow-y-auto max-h-72 -mx-1 px-1 space-y-4"
-        >
-          {timeOff.length > 0 && (
-            <div>
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
-                Time-off · {timeOff.length}
-              </p>
-              <ul className="space-y-2">
+          {/* Time-off section */}
+          <div className="mb-1">
+            <p className="sticky top-0 bg-white text-xs font-semibold text-gray-400 uppercase tracking-wide py-2 z-10">
+              Time-off{timeOff.length > 0 ? ` · ${timeOff.length}` : ""}
+            </p>
+            {timeOff.length === 0 ? (
+              <p className="text-sm text-gray-300 pb-4">No upcoming time-off entries.</p>
+            ) : (
+              <ul className="space-y-0.5 pb-4">
                 {timeOff.map((e) => (
-                  <li key={e.googleEventId} className="flex items-center justify-between gap-4 text-sm">
-                    <span className="text-[#1C2B2A] truncate">{e.name}</span>
-                    <span className="text-gray-400 tabular-nums flex-shrink-0">
-                      {formatDateRange(e.startDate, e.endDate)}
-                    </span>
-                  </li>
+                  <EventRow key={e.googleEventId} event={e} />
                 ))}
               </ul>
-            </div>
-          )}
-          {holidays.length > 0 && (
-            <div>
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
-                Holidays · {holidays.length}
-              </p>
-              <ul className="space-y-2">
+            )}
+          </div>
+
+          {/* Holidays section */}
+          <div className="border-t border-gray-100">
+            <p className="sticky top-0 bg-white text-xs font-semibold text-gray-400 uppercase tracking-wide py-2 z-10">
+              Holidays{holidays.length > 0 ? ` · ${holidays.length}` : ""}
+            </p>
+            {holidays.length === 0 ? (
+              <p className="text-sm text-gray-300">No upcoming holidays.</p>
+            ) : (
+              <ul className="space-y-0.5">
                 {holidays.map((e) => (
-                  <li key={e.googleEventId} className="flex items-center justify-between gap-4 text-sm">
-                    <span className="text-[#1C2B2A] truncate">{e.name}</span>
-                    <span className="text-gray-400 tabular-nums flex-shrink-0">
-                      {formatDateRange(e.startDate, e.endDate)}
-                    </span>
-                  </li>
+                  <EventRow key={e.googleEventId} event={e} />
                 ))}
               </ul>
-            </div>
-          )}
+            )}
+          </div>
+
         </div>
       )}
     </div>

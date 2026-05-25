@@ -34,4 +34,5 @@ export interface ExistingCalendarEvent {
   name: string;
   startDate: string;
   endDate: string;
+  htmlLink?: string;
 }

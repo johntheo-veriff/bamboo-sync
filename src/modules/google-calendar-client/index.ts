@@ -222,6 +222,7 @@ export async function listBambooSyncEvents(
     items?: Array<{
       id: string;
       summary?: string;
+      htmlLink?: string;
       start?: { date?: string; dateTime?: string };
       end?: { date?: string; dateTime?: string };
       extendedProperties?: { private?: { bambooId?: string; bambooType?: string } };
@@ -241,6 +242,7 @@ export async function listBambooSyncEvents(
         name: item.summary ?? "",
         startDate,
         endDate: exclusiveEnd ? inclusiveEndDate(exclusiveEnd) : "",
+        htmlLink: item.htmlLink,
       };
     });
 }
