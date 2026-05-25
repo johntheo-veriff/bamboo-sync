@@ -7,6 +7,7 @@ import {
 } from "./types";
 
 const CALENDAR_API_BASE = "https://www.googleapis.com/calendar/v3/calendars/primary/events";
+const CALENDAR_BASE = "https://www.googleapis.com/calendar/v3/calendars/primary";
 const TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
 
 function exclusiveEndDate(inclusiveDate: string): string {
@@ -22,10 +23,19 @@ function inclusiveEndDate(exclusiveDate: string): string {
 }
 
 function buildEventBody(event: CalendarEventInput): object {
+  const exclusiveEnd = exclusiveEndDate(event.endDate);
+  // outOfOffice requires dateTime format (all-day date format is rejected by the API).
+  // When a timeZone is supplied, use dateTime spanning midnight-to-midnight in that zone.
+  const startField = event.timeZone
+    ? { dateTime: `${event.startDate}T00:00:00`, timeZone: event.timeZone }
+    : { date: event.startDate };
+  const endField = event.timeZone
+    ? { dateTime: `${exclusiveEnd}T00:00:00`, timeZone: event.timeZone }
+    : { date: exclusiveEnd };
   return {
     summary: event.name,
-    start: { date: event.startDate },
-    end: { date: exclusiveEndDate(event.endDate) },
+    start: startField,
+    end: endField,
     eventType: "outOfOffice",
     transparency: "opaque",
     extendedProperties: {
@@ -198,8 +208,8 @@ export async function listBambooSyncEvents(
     items?: Array<{
       id: string;
       summary?: string;
-      start?: { date?: string };
-      end?: { date?: string };
+      start?: { date?: string; dateTime?: string };
+      end?: { date?: string; dateTime?: string };
       extendedProperties?: { private?: { bambooId?: string; bambooType?: string } };
     }>;
   };
@@ -207,14 +217,23 @@ export async function listBambooSyncEvents(
   return (data.items ?? [])
     .filter((item) => item.extendedProperties?.private?.bambooId)
     .map((item) => {
-      const exclusiveEnd = item.end?.date ?? "";
+      // Support both all-day (date) and timed (dateTime) formats — extract date part only
+      const startDate = item.start?.date ?? item.start?.dateTime?.slice(0, 10) ?? "";
+      const exclusiveEnd = item.end?.date ?? item.end?.dateTime?.slice(0, 10) ?? "";
       return {
         googleEventId: item.id,
         bambooId: item.extendedProperties!.private!.bambooId!,
         type: (item.extendedProperties?.private?.bambooType ?? "time-off") as "time-off" | "holiday",
         name: item.summary ?? "",
-        startDate: item.start?.date ?? "",
+        startDate,
         endDate: exclusiveEnd ? inclusiveEndDate(exclusiveEnd) : "",
       };
     });
+}
+
+export async function getUserCalendarTimezone(config: GoogleCalendarConfig): Promise<string> {
+  const response = await fetchWithAuth(config, CALENDAR_BASE, { method: "GET" });
+  if (!response.ok) return "UTC";
+  const data = (await response.json()) as { timeZone?: string };
+  return data.timeZone ?? "UTC";
 }

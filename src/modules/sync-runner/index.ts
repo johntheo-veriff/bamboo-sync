@@ -3,6 +3,7 @@ import { WhosOutEntry } from "@/modules/bamboo-hr-client/types";
 import {
   createEvent,
   deleteEvent,
+  getUserCalendarTimezone,
   listBambooSyncEvents,
   updateEvent,
 } from "@/modules/google-calendar-client";
@@ -33,10 +34,11 @@ export async function runSync(
   const googleConfig = buildGoogleCalendarConfig(connection, store);
 
   try {
-    const [allEntries, employee, existingEvents] = await Promise.all([
+    const [allEntries, employee, existingEvents, timeZone] = await Promise.all([
       fetchWhosOut(bambooConfig),
       connection.userEmail ? fetchCurrentEmployee(bambooConfig, connection.userEmail) : Promise.resolve(null),
       listBambooSyncEvents(googleConfig),
+      getUserCalendarTimezone(googleConfig),
     ]);
 
     const filtered = employee
@@ -55,6 +57,7 @@ export async function runSync(
           name: op.entry.name,
           startDate: op.entry.startDate,
           endDate: op.entry.endDate,
+          timeZone,
         })
       ),
       ...diff.update.map((op) =>
@@ -64,6 +67,7 @@ export async function runSync(
           name: op.entry.name,
           startDate: op.entry.startDate,
           endDate: op.entry.endDate,
+          timeZone,
         })
       ),
       ...diff.delete.map((op) => deleteEvent(googleConfig, op.googleEventId)),

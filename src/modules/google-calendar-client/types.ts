@@ -24,6 +24,7 @@ export interface CalendarEventInput {
   name: string;
   startDate: string; // ISO date
   endDate: string;
+  timeZone?: string; // IANA timezone — when set, events use dateTime format for outOfOffice compatibility
 }
 
 export interface ExistingCalendarEvent {

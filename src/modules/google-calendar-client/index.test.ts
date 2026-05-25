@@ -26,6 +26,7 @@ function makeEvent(overrides: Partial<CalendarEventInput> = {}): CalendarEventIn
     name: "Annual Leave",
     startDate: "2025-07-01",
     endDate: "2025-07-05",
+    timeZone: "Europe/Tallinn",
     ...overrides,
   };
 }
@@ -71,8 +72,8 @@ describe("createEvent", () => {
 
     const body = JSON.parse(options.body as string);
     expect(body.summary).toBe("Annual Leave");
-    expect(body.start).toEqual({ date: "2025-07-01" });
-    expect(body.end).toEqual({ date: "2025-07-06" });
+    expect(body.start).toEqual({ dateTime: "2025-07-01T00:00:00", timeZone: "Europe/Tallinn" });
+    expect(body.end).toEqual({ dateTime: "2025-07-06T00:00:00", timeZone: "Europe/Tallinn" });
     expect(body.eventType).toBe("outOfOffice");
     expect(body.transparency).toBe("opaque");
   });

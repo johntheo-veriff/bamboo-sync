@@ -11,6 +11,7 @@ vi.mock("@/modules/google-calendar-client", () => ({
   createEvent: vi.fn(),
   updateEvent: vi.fn(),
   deleteEvent: vi.fn(),
+  getUserCalendarTimezone: vi.fn().mockResolvedValue("Europe/Tallinn"),
 }));
 
 import { fetchWhosOut } from "@/modules/bamboo-hr-client";
