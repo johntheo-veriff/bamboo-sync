@@ -232,8 +232,17 @@ export async function listBambooSyncEvents(
 }
 
 export async function getUserCalendarTimezone(config: GoogleCalendarConfig): Promise<string> {
-  const response = await fetchWithAuth(config, CALENDAR_BASE, { method: "GET" });
-  if (!response.ok) return "UTC";
-  const data = (await response.json()) as { timeZone?: string };
-  return data.timeZone ?? "UTC";
+  // Use the user's Google Calendar settings timezone (reflects their actual location),
+  // not the primary calendar's timezone (which may be set to a company HQ timezone).
+  const url = "https://www.googleapis.com/calendar/v3/users/me/settings/timezone";
+  const response = await fetchWithAuth(config, url, { method: "GET" });
+  if (!response.ok) {
+    // Fallback: try the primary calendar timezone
+    const calResponse = await fetchWithAuth(config, CALENDAR_BASE, { method: "GET" });
+    if (!calResponse.ok) return "UTC";
+    const calData = (await calResponse.json()) as { timeZone?: string };
+    return calData.timeZone ?? "UTC";
+  }
+  const data = (await response.json()) as { value?: string };
+  return data.value ?? "UTC";
 }
