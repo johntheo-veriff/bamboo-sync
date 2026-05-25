@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 interface SyncedEvent {
@@ -21,10 +21,10 @@ function formatDateRange(start: string, end: string): string {
 }
 
 export function SyncedEventsPanel({ lastSyncedAt }: { lastSyncedAt?: string }) {
-  const [open, setOpen] = useState(false);
   const [events, setEvents] = useState<SyncedEvent[] | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   const fetchEvents = useCallback(async () => {
     setLoading(true);
@@ -41,84 +41,81 @@ export function SyncedEventsPanel({ lastSyncedAt }: { lastSyncedAt?: string }) {
     }
   }, []);
 
-  useEffect(() => {
-    if (open && events === null) fetchEvents();
-  }, [open, events, fetchEvents]);
+  useEffect(() => { fetchEvents(); }, [fetchEvents]);
 
-  // Refetch when a new sync completes
   useEffect(() => {
-    if (lastSyncedAt && open) {
-      setEvents(null);
-    }
-  }, [lastSyncedAt, open]);
+    if (lastSyncedAt) setEvents(null);
+  }, [lastSyncedAt]);
+
+  useEffect(() => {
+    if (events === null && !loading) fetchEvents();
+  }, [events, loading, fetchEvents]);
 
   const holidays = events?.filter((e) => e.type === "holiday") ?? [];
   const timeOff = events?.filter((e) => e.type === "time-off") ?? [];
   const total = events?.length ?? 0;
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between px-8 py-5 text-left"
-      >
-        <div>
-          <p className="text-sm font-medium text-[#1C2B2A]">Synced events</p>
-          {!open && events !== null && (
-            <p className="text-xs text-gray-400 mt-0.5">{total} event{total !== 1 ? "s" : ""} in your calendar</p>
-          )}
-        </div>
-        <svg
-          className={`w-4 h-4 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`}
-          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-sm font-medium text-[#1C2B2A]">Synced events</p>
+        {events !== null && !loading && (
+          <span className="text-xs text-gray-400 tabular-nums">
+            {total} {total !== 1 ? "events" : "event"}
+          </span>
+        )}
+      </div>
 
-      {open && (
-        <div className="border-t border-gray-100 px-8 py-5">
-          {loading && <p className="text-sm text-gray-400">Loading…</p>}
-          {error && <p className="text-sm text-red-500">{error}</p>}
-          {events !== null && !loading && (
-            <div className="space-y-5">
-              {holidays.length > 0 && (
-                <div>
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
-                    Holidays ({holidays.length})
-                  </p>
-                  <ul className="space-y-1.5">
-                    {holidays.map((e) => (
-                      <li key={e.googleEventId} className="flex justify-between text-sm">
-                        <span className="text-[#1C2B2A]">{e.name}</span>
-                        <span className="text-gray-400 tabular-nums">
-                          {formatDateRange(e.startDate, e.endDate)}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {timeOff.length > 0 && (
-                <div>
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
-                    Time-off ({timeOff.length})
-                  </p>
-                  <ul className="space-y-1.5">
-                    {timeOff.map((e) => (
-                      <li key={e.googleEventId} className="flex justify-between text-sm">
-                        <span className="text-[#1C2B2A]">{e.name}</span>
-                        <span className="text-gray-400 tabular-nums">
-                          {formatDateRange(e.startDate, e.endDate)}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {total === 0 && (
-                <p className="text-sm text-gray-400">No events synced yet.</p>
-              )}
+      {loading && (
+        <div className="flex items-center gap-2 py-4">
+          <div className="w-4 h-4 rounded-full border-2 border-[#00E5CC] border-t-transparent animate-spin" />
+          <p className="text-sm text-gray-400">Loading…</p>
+        </div>
+      )}
+
+      {error && <p className="text-sm text-red-500 py-2">{error}</p>}
+
+      {events !== null && !loading && total === 0 && (
+        <p className="text-sm text-gray-400 py-2">No events synced yet.</p>
+      )}
+
+      {events !== null && !loading && total > 0 && (
+        <div
+          ref={listRef}
+          className="overflow-y-auto max-h-72 -mx-1 px-1 space-y-4"
+        >
+          {timeOff.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+                Time-off · {timeOff.length}
+              </p>
+              <ul className="space-y-2">
+                {timeOff.map((e) => (
+                  <li key={e.googleEventId} className="flex items-center justify-between gap-4 text-sm">
+                    <span className="text-[#1C2B2A] truncate">{e.name}</span>
+                    <span className="text-gray-400 tabular-nums flex-shrink-0">
+                      {formatDateRange(e.startDate, e.endDate)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {holidays.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+                Holidays · {holidays.length}
+              </p>
+              <ul className="space-y-2">
+                {holidays.map((e) => (
+                  <li key={e.googleEventId} className="flex items-center justify-between gap-4 text-sm">
+                    <span className="text-[#1C2B2A] truncate">{e.name}</span>
+                    <span className="text-gray-400 tabular-nums flex-shrink-0">
+                      {formatDateRange(e.startDate, e.endDate)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
         </div>
