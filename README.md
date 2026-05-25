@@ -1,7 +1,6 @@
 # Bamboo Sync
 
-Automatically mirrors your BambooHR time-off and company holidays into Google Calendar as **Out of Office** events — so Slack, Meet, and other Google integrations show you as unavailable instead of "in a meeting."
-
+Automatically mirrors your BambooHR time-off and company holidays into Google Calendar as **Out of Office** events.
 Events are kept in sync daily. BambooHR is always the source of truth: when an entry is added, updated, or cancelled, the calendar event follows.
 
 ---
