@@ -21,7 +21,6 @@ You can manage or disconnect at any time from the Management page.
 - **Daily background sync** — runs at 2 AM UTC via a Firebase scheduled function; creates, updates, and deletes events to match BambooHR's current state
 - **Sync preview** — shows all upcoming time-off and a holiday summary before the first sync fires
 - **Timezone-aware events** — configurable per-user timezone so events land at midnight–midnight in the right zone regardless of Google Calendar's account settings
-- **Token refresh hardening** — concurrent API requests share a single in-flight token refresh; the updated token propagates in-place so subsequent batches never hit a second 401
 - **Manual sync & clear** — trigger a sync on demand or wipe all synced events and start fresh
 - **Disconnect options** — disconnect only (keeps events) or disconnect and delete
 
